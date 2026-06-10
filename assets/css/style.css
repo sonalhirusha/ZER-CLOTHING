@@ -706,3 +706,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; line-height
 .text-center { text-align: center; }
 .mt-s { margin-top: 14px; } .mt-m { margin-top: 28px; } .mb-m { margin-bottom: 28px; }
 .flex { display: flex; } .between { justify-content: space-between; } .center { align-items: center; } .gap { gap: 14px; } .wrap { flex-wrap: wrap; }
+
+
+/* ----------  REAL IMAGE SUPPORT (auto-applied to .ph[data-img])  ---------- */
+.ph.ph--img { background-size: cover; background-position: center; background-repeat: no-repeat; }
+.ph.ph--img::after { content: none; } /* hide the placeholder label once a real image loads */
+.ph.ph--img::before { display: none; }
+img.real-img { width: 100%; height: 100%; object-fit: cover; display: block; }

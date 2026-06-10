@@ -149,8 +149,8 @@
     <article class="product-card" data-reveal>
       <div class="media">
         <a href="product.html?id=${p.id}" aria-label="${p.name}">
-          <div class="ph ph--main ph--shimmer" data-label="${p.label}"></div>
-          <div class="ph ph--alt ph-fashion" data-label="${p.label} · BACK"></div>
+          <div class="ph ph--main ph--shimmer" data-label="${p.label}" data-img="${p.img || ''}"></div>
+          <div class="ph ph--alt ph-fashion" data-label="${p.label} · BACK" data-img="${p.img2 || p.img || ''}"></div>
         </a>
         <div class="tags">${tags}</div>
         <button class="card-fav ${fav}" data-fav="${p.id}" aria-label="Wishlist">${ICON.heart}</button>
@@ -166,6 +166,21 @@
   }
   window.ZERO.productCard = productCard;
   window.ZERO.getProduct = (id) => PRODUCTS.find(p => p.id === id);
+
+  /* ---------- Auto real-image loader ---------- */
+  // Any element <div class="ph" data-img="path/to.jpg"> becomes a real photo.
+  // Falls back to the styled placeholder when data-img is empty/missing.
+  function applyImages(root) {
+    (root || document).querySelectorAll(".ph[data-img]").forEach(el => {
+      const src = el.getAttribute("data-img");
+      if (!src || el.classList.contains("ph--img")) return;
+      const probe = new Image();
+      probe.onload = () => { el.style.backgroundImage = `url("${src}")`; el.classList.add("ph--img"); };
+      probe.onerror = () => {}; // keep placeholder if the file isn't there yet
+      probe.src = src;
+    });
+  }
+  window.ZERO.applyImages = applyImages;
 
 
   /* ---------- Cart logic ---------- */
@@ -243,6 +258,7 @@
         io.unobserve(e.target); } });
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
     $$("[data-reveal],[data-stagger]").forEach(el => io.observe(el));
+    applyImages(document);
   }
   window.ZERO.initReveal = initReveal;
 
@@ -299,6 +315,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     initLoader();
     if (window.ZERO_PAGE !== undefined) window.ZERO.mount(window.ZERO_PAGE);
-    bindEvents(); renderCart(); updateBadges(); initReveal();
+    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document);
   });
 })();
