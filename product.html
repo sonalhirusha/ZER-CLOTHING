@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — ZERØ CLOTHING</title>
+  <meta name="description" content="Premium custom streetwear product details — fabric, fit, care, shipping and reviews. ZERØ CLOTHING, made in Sri Lanka." />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="ZERØ CLOTHING — Product" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">LOADING</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <section class="section--tight container">
+      <nav class="breadcrumb" id="pdpCrumb"><a href="index.html">Home</a><span>/</span><a href="shop.html">Shop</a></nav>
+      <div class="pdp" id="pdp"></div>
+    </section>
+
+    <section class="section container" id="relatedWrap" style="border-top:1px solid var(--line-soft)">
+      <div class="section-head"><p class="eyebrow">Complete The Look</p><h2 class="h-md">Frequently Bought Together</h2></div>
+      <div class="grid cols-4" id="fbtGrid"></div>
+    </section>
+
+    <section class="section container" style="border-top:1px solid var(--line-soft)">
+      <div class="section-head"><p class="eyebrow">You May Also Like</p><h2 class="h-md">Related Products</h2></div>
+      <div class="grid cols-4" id="relatedGrid"></div>
+    </section>
+
+    <section class="section container" id="reviewsWrap" style="border-top:1px solid var(--line-soft)">
+      <div class="section-head section-head--row"><div><p class="eyebrow">Verified Buyers</p><h2 class="h-md">Customer Reviews</h2></div><div class="pdp-rate" id="reviewSummary"></div></div>
+      <div class="grid cols-3" id="pdpReviews"></div>
+    </section>
+  </main>
+
+  <div class="sticky-buy" id="stickyBuy"></div>
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "shop";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/product.js"></script>
+</body>
+</html>

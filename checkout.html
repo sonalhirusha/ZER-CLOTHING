@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — ZERØ CLOTHING</title>
+  <meta name="description" content="Secure checkout — ZERØ CLOTHING. Islandwide delivery, card, EZ Cash, bank transfer & WhatsApp receipt support." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">CHECKOUT</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <section class="section--tight container">
+      <nav class="breadcrumb"><a href="index.html">Home</a><span>/</span><a href="shop.html">Shop</a><span>/</span><span>Checkout</span></nav>
+      <h1 class="h-lg mb-m" data-reveal>Checkout</h1>
+      <form class="checkout" id="checkoutForm">
+        <div>
+          <!-- Customer -->
+          <div class="checkout-card">
+            <h3><span class="step-no">1</span> Customer Information</h3>
+            <div class="field--row"><div class="field"><label>First Name</label><input required placeholder="Nimal"></div><div class="field"><label>Last Name</label><input required placeholder="Perera"></div></div>
+            <div class="field--row"><div class="field"><label>Email</label><input type="email" required placeholder="you@email.lk"></div><div class="field"><label>Phone Number</label><input type="tel" required placeholder="077 123 4567"></div></div>
+          </div>
+
+          <!-- Delivery -->
+          <div class="checkout-card">
+            <h3><span class="step-no">2</span> Delivery Information</h3>
+            <div class="field"><label>Address Line 1</label><input required placeholder="No. 24, Galle Road"></div>
+            <div class="field"><label>Address Line 2 (optional)</label><input placeholder="Apartment, suite, etc."></div>
+            <div class="field--row"><div class="field"><label>City</label><input required placeholder="Colombo"></div><div class="field"><label>District</label><select id="districtSel" required></select></div></div>
+            <div class="field--row"><div class="field"><label>Province</label><select id="provinceSel" required></select></div><div class="field"><label>Postal Code</label><input required placeholder="00300"></div></div>
+            <div class="field"><label>Country</label><input value="Sri Lanka" readonly></div>
+          </div>
+
+          <!-- Shipping -->
+          <div class="checkout-card">
+            <h3><span class="step-no">3</span> Shipping Method</h3>
+            <div id="shippingOpts" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+
+          <!-- Payment -->
+          <div class="checkout-card">
+            <h3><span class="step-no">4</span> Payment Method</h3>
+            <div class="pay-method-grid" id="payGrid"></div>
+            <div id="payDetail"></div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <aside class="summary">
+          <h3 style="font-family:var(--font-body);margin-bottom:18px">Order Summary</h3>
+          <div id="summaryItems"></div>
+          <div class="coupon-row"><input placeholder="Coupon code (try ZERO10)"><button type="button" class="btn btn--ghost btn--sm" id="applyCoupon"><span>Apply</span></button></div>
+          <div class="cart-line"><span>Subtotal</span><b id="sumSub">Rs 0</b></div>
+          <div class="cart-line" id="discountLine" style="display:none;color:#34d375"><span>Discount</span><b id="sumDisc">- Rs 0</b></div>
+          <div class="cart-line"><span>Shipping</span><b id="sumShip">Rs 0</b></div>
+          <div class="cart-total"><span>Total</span><span id="sumTotal" class="silver-text">Rs 0</span></div>
+          <button type="submit" class="btn btn--primary btn--block btn--lg"><span>Place Order</span></button>
+          <p class="muted text-center" style="font-size:.74rem;margin-top:14px">Secure checkout · 256-bit encryption</p>
+        </aside>
+      </form>
+    </section>
+  </main>
+
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/checkout.js"></script>
+</body>
+</html>

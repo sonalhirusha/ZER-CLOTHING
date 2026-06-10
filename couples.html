@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Couple Collection — Matching Streetwear | ZERØ CLOTHING</title>
+  <meta name="description" content="Matching hoodies, tees and oversized sets for couples. Anniversary collection, custom couple prints and His & Hers — ZERØ CLOTHING, made in Sri Lanka." />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="Couple Collection — ZERØ CLOTHING" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">FOR TWO</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <section class="editorial">
+      <div class="ph ph-fashion float" data-label="COUPLE · EDITORIAL"></div>
+      <div class="container editorial__inner">
+        <p class="eyebrow" data-reveal>His & Hers</p>
+        <h1 data-reveal>MADE<br>FOR TWO</h1>
+        <p class="lead mt-s" data-reveal>Matching streetwear that speaks without saying a word. Designed for the two of you — or designed by the two of you.</p>
+        <div class="mt-m flex gap wrap" data-reveal><a href="#grid" class="btn btn--primary btn--lg"><span>Shop Sets</span></a><a href="customize.html" class="btn btn--ghost btn--lg"><span>Customize A Set</span></a></div>
+      </div>
+    </section>
+
+    <section class="section--tight container">
+      <div class="collection-strip" data-stagger>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="HOODIES"></div><span>Matching Hoodies</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="TEES"></div><span>Matching Tees</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="OVERSIZED"></div><span>Oversized Sets</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="ANNIVERSARY"></div><span>Anniversary</span></a>
+        <a href="customize.html" class="cs-item"><div class="ph ph-fashion" data-label="CUSTOM"></div><span>Custom Couple Prints</span></a>
+      </div>
+    </section>
+
+    <section class="split-feature container" style="border:1px solid var(--line-soft);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--gutter)">
+      <div class="pane">
+        <p class="eyebrow" data-reveal>His & Hers</p>
+        <h2 class="h-lg" data-reveal style="margin:12px 0 16px">Two Pieces.<br>One Statement.</h2>
+        <p class="lead" data-reveal>Anniversary gift or everyday flex — our couple sets come matched, boxed and ready to gift. Personalise names, dates or artwork in the studio.</p>
+        <div class="mt-m" data-reveal><a href="customize.html" class="btn btn--primary"><span>Personalise Yours</span></a></div>
+      </div>
+      <div class="pane pane--media"><div class="ph ph-fashion ph--shimmer" data-label="ANNIVERSARY EDIT"></div></div>
+    </section>
+
+    <section class="section container" id="grid">
+      <div class="section-head section-head--row"><div><p class="eyebrow">The Collection</p><h2 class="h-lg">Shop Couple Sets</h2></div><a href="shop.html" class="link-underline">View All</a></div>
+      <div class="grid cols-4" id="collGrid"></div>
+    </section>
+  </main>
+
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "couples";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var list = PRODUCTS.filter(function (p) { return p.collection === "Couple"; });
+      while (list.length < 4) { list = list.concat(list); }
+      document.getElementById("collGrid").innerHTML = list.slice(0, 8).map(window.ZERO.productCard).join("");
+      window.ZERO.initReveal();
+    });
+  </script>
+</body>
+</html>

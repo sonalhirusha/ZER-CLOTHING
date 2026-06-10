@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Studio — Customize Your Streetwear | ZERØ CLOTHING</title>
+  <meta name="description" content="Design your own custom streetwear. Upload artwork, add text, choose front/back/sleeve prints and preview live. Designed By You — ZERØ CLOTHING." />
+  <meta name="theme-color" content="#000000" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Bebas+Neue&family=Playfair+Display:wght@600&family=Anton&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">THE STUDIO</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <div class="studio">
+      <!-- LEFT: product + upload -->
+      <aside class="studio-panel">
+        <div class="studio-step"><b>01</b> Choose Your Canvas</div>
+        <div class="type-grid" id="typeGrid"></div>
+
+        <div class="studio-step"><b>02</b> Garment Colour</div>
+        <div class="color-dots mb-m" id="garmentColors"></div>
+
+        <div class="studio-step"><b>03</b> Print Placement</div>
+        <div class="zone-tabs" id="zoneTabs">
+          <button class="zone-tab sel" data-zone="front">Front</button>
+          <button class="zone-tab" data-zone="back">Back</button>
+          <button class="zone-tab" data-zone="sleeve">Sleeve</button>
+        </div>
+      </aside>
+
+      <!-- CENTER: live mockup -->
+      <section class="studio-stage">
+        <div class="mockup" id="mockup">
+          <div class="ph mockup__shirt" id="mockShirt" data-label=""></div>
+          <div class="print-zone print-zone--front active" id="printZone"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT: design tools -->
+      <aside class="studio-panel studio-panel--right">
+        <div class="studio-step"><b>04</b> Upload Your Design</div>
+        <div class="dropzone" id="dropzone">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <b>Drag & drop your artwork</b>
+          <small>PNG, JPG or SVG · up to 10MB · 300 DPI recommended</small>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+
+        <div class="studio-step" style="margin-top:26px"><b>05</b> Add Text</div>
+        <div class="field"><input type="text" id="textInput" placeholder="Type your statement…"></div>
+        <div class="field"><label>Font</label><div class="font-row" id="fontRow"></div></div>
+        <div class="field"><label>Text Size — <span id="sizeVal">42</span>px</label><input type="range" class="range" id="textSize" min="16" max="90" value="42"></div>
+        <div class="field"><label>Text Colour</label><div class="color-dots" id="textColors"></div></div>
+
+        <div class="divider" style="margin:22px 0"></div>
+        <div class="studio-summary">
+          <div class="flex between center mb-m"><span class="muted" id="summaryType">Custom T-Shirt</span><span class="price-tag" id="studioPrice">Rs 3,900</span></div>
+          <div id="priceBreakdown" class="muted" style="font-size:.78rem;margin-bottom:16px"></div>
+          <button class="btn btn--primary btn--block btn--lg" id="studioAdd"><span>Add To Bag</span></button>
+          <button class="btn btn--ghost btn--block btn--sm" id="saveDesign" style="margin-top:10px"><span>Save Design</span></button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "customize";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/customize.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acid Wash Collection — ZERØ CLOTHING</title>
+  <meta name="description" content="The ZERØ Acid Wash Collection — black, ash, vintage and oversized acid wash hoodies and tees. Premium streetwear made in Sri Lanka." />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="Acid Wash Collection — ZERØ CLOTHING" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">ACID WASH</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <section class="editorial">
+      <div class="ph ph-fashion float" data-label="ACID WASH · EDITORIAL"></div>
+      <div class="container editorial__inner">
+        <p class="eyebrow" data-reveal>FW26 Collection</p>
+        <h1 data-reveal>ACID<br>WASH</h1>
+        <p class="lead mt-s" data-reveal>Garment-dyed, hand-washed, never twice the same. Each piece carries a one-of-one fade signature.</p>
+        <div class="mt-m" data-reveal><a href="#grid" class="btn btn--primary btn--lg"><span>Shop The Drop</span></a></div>
+      </div>
+    </section>
+
+    <section class="section--tight container">
+      <div class="collection-strip" data-stagger>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="BLACK"></div><span>Acid Wash Black</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="GRAY"></div><span>Acid Wash Gray</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="VINTAGE"></div><span>Acid Wash Vintage</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="OVERSIZED"></div><span>Acid Wash Oversized</span></a>
+        <a href="#grid" class="cs-item"><div class="ph ph-fashion" data-label="HOODIES"></div><span>Hoodie Collection</span></a>
+      </div>
+    </section>
+
+    <section class="split-feature container" style="border:1px solid var(--line-soft);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:var(--gutter)">
+      <div class="pane pane--media"><div class="ph ph-fashion ph--shimmer" data-label="THE PROCESS"></div></div>
+      <div class="pane">
+        <p class="eyebrow" data-reveal>The Process</p>
+        <h2 class="h-lg" data-reveal style="margin:12px 0 16px">One-Of-One Fades</h2>
+        <p class="lead" data-reveal>Every ZERØ acid wash is treated by hand in small batches. No two garments fade identically — your piece is genuinely unique, broken-in from day one.</p>
+      </div>
+    </section>
+
+    <section class="section container" id="grid">
+      <div class="section-head section-head--row"><div><p class="eyebrow">The Collection</p><h2 class="h-lg">Shop Acid Wash</h2></div><a href="shop.html" class="link-underline">View All</a></div>
+      <div class="grid cols-4" id="collGrid"></div>
+    </section>
+  </main>
+
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "acid";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var list = PRODUCTS.filter(function (p) { return p.collection === "Acid Wash" || p.cat === "Acid Wash Hoodies"; });
+      document.getElementById("collGrid").innerHTML = list.map(window.ZERO.productCard).join("");
+      window.ZERO.initReveal();
+    });
+  </script>
+</body>
+</html>

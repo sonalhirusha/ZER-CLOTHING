@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop All — ZERØ CLOTHING | Custom Streetwear Sri Lanka</title>
+  <meta name="description" content="Shop premium custom streetwear from ZERØ. Filter by category, size, colour, price & collection. Acid wash hoodies, oversized tees, couple sets & more." />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="Shop All — ZERØ CLOTHING" />
+  <meta property="og:description" content="Premium custom streetwear made in Sri Lanka." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div id="loader"><div class="loader-inner"><div class="loader-mark"><span>ZERØ</span></div><div class="loader-bar"><i></i></div><div class="loader-pct">THE SHOP</div></div></div>
+  <div id="site-header-mount"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Home</a><span>/</span><span>Shop</span></nav>
+        <p class="eyebrow" data-reveal>The Full Range</p>
+        <h1 class="h-xl" data-reveal>Shop All</h1>
+        <p class="lead mt-s" data-reveal>Every ZERØ piece — engineered in premium fabric, printed to last, delivered islandwide.</p>
+      </div>
+    </section>
+
+    <section class="section--tight container">
+      <div class="mobile-filter-bar">
+        <button class="btn btn--ghost btn--sm" data-open-filters><span>Filters</span></button>
+        <select class="sort-select" id="sortSelectMobile" style="flex:1"></select>
+      </div>
+      <div class="shop-layout">
+        <aside class="filters" id="filters"></aside>
+        <div>
+          <div class="shop-toolbar">
+            <span class="shop-count" id="shopCount">Loading…</span>
+            <select class="sort-select" id="sortSelect"></select>
+          </div>
+          <div class="chip-row" id="activeChips"></div>
+          <div class="grid cols-3" id="shopGrid"></div>
+          <div id="shopEmpty" style="display:none;text-align:center;padding:80px 0;color:var(--gray-500)">No products match your filters. <button class="link-underline" data-clear-all>Clear all</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer-mount"></div>
+  <div id="drawer-mount"></div>
+  <script>window.ZERO_PAGE = "shop";</script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/shop.js"></script>
+</body>
+</html>
