@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const D = {
     type: CUSTOM_TYPES[0], garment: "#0a0a0a", zone: "front",
     img: null, text: "", font: FONTS[0][0], textSize: 42, textColor: "#ffffff",
+    imgScale: 60, textPos: { x: 50, y: 50 }, imgPos: { x: 50, y: 50 },
     prints: { front: false, back: false, sleeve: false }
   };
 
@@ -39,11 +40,37 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderDesign() {
     const zone = $("#printZone");
     let html = "";
-    if (D.img) html += `<img class="design-img" src="${D.img}" alt="design">`;
-    if (D.text) html += `<div class="design-text" style="font-family:${D.font};font-size:${D.textSize}px;color:${D.textColor}">${escapeHtml(D.text)}</div>`;
+    if (D.img) html += `<img class="design-img" src="${D.img}" alt="design" style="left:${D.imgPos.x}%;top:${D.imgPos.y}%;width:${D.imgScale}%;max-width:none;max-height:none">`;
+    if (D.text) html += `<div class="design-text" style="left:${D.textPos.x}%;top:${D.textPos.y}%;font-family:${D.font};font-size:${D.textSize}px;color:${D.textColor}">${escapeHtml(D.text)}</div>`;
+    if (D.img || D.text) html += `<span class="drag-hint">Drag to reposition</span>`;
     zone.innerHTML = html;
     D.prints[D.zone] = !!(D.img || D.text);
+    $("#imgSizeField").style.display = D.img ? "block" : "none";
   }
+
+  /* ---- Drag to position anywhere within the print zone ---- */
+  (function enableDrag() {
+    const zone = $("#printZone");
+    let mode = null, target = null;
+    zone.addEventListener("pointerdown", (e) => {
+      const el = e.target.closest(".design-text, .design-img");
+      if (!el) return;
+      mode = el.classList.contains("design-text") ? "text" : "img";
+      target = el; el.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    zone.addEventListener("pointermove", (e) => {
+      if (!mode) return;
+      const r = zone.getBoundingClientRect();
+      let x = ((e.clientX - r.left) / r.width) * 100;
+      let y = ((e.clientY - r.top) / r.height) * 100;
+      x = Math.max(4, Math.min(96, x)); y = Math.max(4, Math.min(96, y));
+      const pos = mode === "text" ? D.textPos : D.imgPos;
+      pos.x = x; pos.y = y; target.style.left = x + "%"; target.style.top = y + "%";
+    });
+    const end = () => { mode = null; target = null; };
+    zone.addEventListener("pointerup", end);
+    zone.addEventListener("pointercancel", end);
+  })();
 
   function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
@@ -98,6 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $("#textInput").addEventListener("input", (e) => { D.text = e.target.value; renderDesign(); updatePrice(); });
   $("#textSize").addEventListener("input", (e) => { D.textSize = +e.target.value; $("#sizeVal").textContent = e.target.value; renderDesign(); });
+  $("#imgSize").addEventListener("input", (e) => { D.imgScale = +e.target.value; $("#imgSizeVal").textContent = e.target.value + "%"; renderDesign(); });
 
   // Upload (file + drag/drop)
   const dz = $("#dropzone"), fi = $("#fileInput");

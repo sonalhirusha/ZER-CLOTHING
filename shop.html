@@ -36,12 +36,13 @@
       <div class="shop-layout">
         <aside class="filters" id="filters"></aside>
         <div>
+          <div class="cat-scroller" id="catScroller"></div>
           <div class="shop-toolbar">
             <span class="shop-count" id="shopCount">Loading…</span>
             <select class="sort-select" id="sortSelect"></select>
           </div>
           <div class="chip-row" id="activeChips"></div>
-          <div class="grid cols-3" id="shopGrid"></div>
+          <div class="grid cols-3 pgrid" id="shopGrid"></div>
           <div id="shopEmpty" style="display:none;text-align:center;padding:80px 0;color:var(--gray-500)">No products match your filters. <button class="link-underline" data-clear-all>Clear all</button></div>
         </div>
       </div>

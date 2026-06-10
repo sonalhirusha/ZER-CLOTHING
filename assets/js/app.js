@@ -73,7 +73,7 @@
       <a href="tracking.html">Track Order ${ICON.arrow}</a>
       <a href="contact.html">Contact ${ICON.arrow}</a>
       <a href="account.html">Account ${ICON.arrow}</a>
-      <div class="m-socials"><a href="#">Instagram</a><a href="#">TikTok</a><a href="#">Facebook</a><a href="https://wa.me/${ZERO_WHATSAPP}">WhatsApp</a></div>
+      <div class="m-socials"><a href="https://www.instagram.com/zero_clth7/" target="_blank">Instagram</a><a href="#">TikTok</a><a href="#">Facebook</a><a href="https://wa.me/${ZERO_WHATSAPP}">WhatsApp</a></div>
     </div>`;
   }
 
@@ -112,7 +112,7 @@
             <li><a href="tracking.html">Track Order</a></li>
           </ul></div>
           <div><h4>Connect</h4><ul>
-            <li><a href="#">Instagram</a></li>
+            <li><a href="https://www.instagram.com/zero_clth7/" target="_blank">Instagram · @zero_clth7</a></li>
             <li><a href="#">TikTok</a></li>
             <li><a href="#">Facebook</a></li>
             <li><a href="https://wa.me/${ZERO_WHATSAPP}">WhatsApp · 077 869 1065</a></li>
@@ -175,7 +175,7 @@
       const src = el.getAttribute("data-img");
       if (!src || el.classList.contains("ph--img")) return;
       const probe = new Image();
-      probe.onload = () => { el.style.backgroundImage = `url("${src}")`; el.classList.add("ph--img"); };
+      probe.onload = () => { el.style.backgroundImage = `url("${src}")`; el.classList.add("ph--img", "ph--reveal"); };
       probe.onerror = () => {}; // keep placeholder if the file isn't there yet
       probe.src = src;
     });
