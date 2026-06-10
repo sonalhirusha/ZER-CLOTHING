@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
     $("#shopEmpty").style.display = list.length ? "none" : "block";
     $("#shopGrid").style.display = list.length ? "grid" : "none";
     renderChips();
+    buildCatScroller();
     initReveal();
   }
 
@@ -88,6 +89,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const opts = SORTS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
     $("#sortSelect").innerHTML = opts;
     if ($("#sortSelectMobile")) $("#sortSelectMobile").innerHTML = opts;
+  }
+
+  function buildCatScroller() {
+    const sc = $("#catScroller"); if (!sc) return;
+    const all = !state.cats.size;
+    sc.innerHTML = `<span class="chip ${all ? "active" : ""}" data-catchip="__all">All</span>` +
+      FILTER_CATS.map(c => `<span class="chip ${state.cats.has(c) ? "active" : ""}" data-catchip="${c}">${c}</span>`).join("");
   }
 
   function clearAll() {
@@ -118,6 +126,14 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.addEventListener("click", (e) => {
+    const catChip = e.target.closest("[data-catchip]");
+    if (catChip) {
+      const v = catChip.getAttribute("data-catchip");
+      if (v === "__all") { state.cats.clear(); }
+      else if (state.cats.has(v)) { state.cats.delete(v); }
+      else { state.cats.clear(); state.cats.add(v); } // single-tap category select
+      buildFilters(); render();
+    }
     const sw = e.target.closest("[data-swatch]");
     if (sw) { const c = sw.getAttribute("data-swatch"); sw.classList.toggle("sel");
       state.colors.has(c) ? state.colors.delete(c) : state.colors.add(c); render(); }

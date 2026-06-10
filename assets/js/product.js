@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const views = ["FRONT", "BACK", "DETAIL", "ON BODY"];
   $("#pdp").innerHTML = `
     <div class="pdp-gallery">
-      <div class="pdp-thumbs">${views.map((v, i) => `<div class="pdp-thumb ${i === 0 ? "active" : ""}" data-view="${i}"><div class="ph ph-fashion" data-label="${v}"></div></div>`).join("")}</div>
-      <div class="pdp-main" id="pdpMain"><div class="pdp-badge">${p.badge ? `<span class="tag">${p.badge}</span>` : ""}</div><div class="ph ph-fashion ph--shimmer" data-label="${p.label} · FRONT"></div></div>
+      <div class="pdp-thumbs">${views.map((v, i) => `<div class="pdp-thumb ${i === 0 ? "active" : ""}" data-view="${i}"><div class="ph ph-fashion" data-label="${v}" data-img="${(i === 1 ? (p.img2 || p.img) : p.img) || ''}"></div></div>`).join("")}</div>
+      <div class="pdp-main" id="pdpMain"><div class="pdp-badge">${p.badge ? `<span class="tag">${p.badge}</span>` : ""}</div><div class="ph ph-fashion ph--shimmer" data-label="${p.label} · FRONT" data-img="${p.img || ''}"></div></div>
     </div>
     <div class="pdp-info">
       <div class="card-cat">${p.cat}</div>
