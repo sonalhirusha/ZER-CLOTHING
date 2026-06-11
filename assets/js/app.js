@@ -2,6 +2,15 @@
 (function () {
   "use strict";
 
+  /* ---------- Inject premium enhancement stylesheet (additive) ---------- */
+  try {
+    if (!document.querySelector("link[data-zx-enhance]")) {
+      const l = document.createElement("link");
+      l.rel = "stylesheet"; l.href = "assets/css/enhance.css"; l.setAttribute("data-zx-enhance", "1");
+      (document.head || document.documentElement).appendChild(l);
+    }
+  } catch (e) { /* non-fatal */ }
+
   /* ---------- Utilities ---------- */
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -302,6 +311,7 @@
         </a>
         <div class="tags">${tags}</div>
         <button class="card-fav ${fav}" data-fav="${p.id}" aria-label="Wishlist">${ICON.heart}</button>
+        <button class="qv-btn" data-quickview="${p.id}" aria-label="Quick view"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <div class="card-add"><button class="btn btn--primary btn--block btn--sm" data-quickadd="${p.id}"><span>Quick Add — ${money(p.price)}</span></button></div>
       </div>
       <div class="card-body">
@@ -496,6 +506,80 @@
   }
   window.ZERO.openSearch = openSearch;
 
+  /* ---------- Quick-view modal (conversion booster) ---------- */
+  let qvState = { product: null, size: null, color: null };
+  function ensureQuickViewUI() {
+    if ($("#qvOverlay")) return;
+    const el = document.createElement("div");
+    el.id = "qvOverlay";
+    el.className = "qv-overlay";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Quick view");
+    el.innerHTML = `<div class="qv-modal" role="document">
+      <button class="qv-close" data-qv-close aria-label="Close">${ICON.close}</button>
+      <div class="qv-media" data-qv-media></div>
+      <div class="qv-body" data-qv-body></div>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  function renderQuickView() {
+    const p = qvState.product; if (!p) return;
+    const media = $("[data-qv-media]"), body = $("[data-qv-body]");
+    media.innerHTML = `<div class="ph ph-fashion ph--shimmer" data-label="${escapeText(p.label)}" data-img="${p.img || ''}"></div>`;
+    const priceHTML = p.was ? `${money(p.price)} <span class="was">${money(p.was)}</span>` : money(p.price);
+    const sizes = (p.sizes || []).map(s => `<button class="qv-size ${(p.oos||[]).includes(s) ? 'oos' : ''} ${qvState.size === s ? 'active' : ''}" data-qv-size="${s}">${s}</button>`).join("");
+    const colors = (p.colors || []).map(c => `<span class="qv-swatch ${qvState.color === c ? 'active' : ''}" data-qv-color="${c}" style="background:${c}" title="${colorLabel(c)}"></span>`).join("");
+    body.innerHTML = `
+      <span class="qv-cat">${escapeText(p.cat || '')}</span>
+      <h3>${escapeText(p.name)}</h3>
+      <div class="qv-price">${priceHTML}</div>
+      <p class="muted" style="font-size:.9rem">${escapeText(p.description || 'Heavyweight premium streetwear, finished by hand in Colombo. Designed by you.')}</p>
+      ${sizes ? `<div><div class="eyebrow" style="margin-bottom:8px">Size</div><div class="qv-opts" data-qv-sizes>${sizes}</div></div>` : ''}
+      ${colors ? `<div><div class="eyebrow" style="margin-bottom:8px">Colour — <span data-qv-colorname>${colorLabel(qvState.color)}</span></div><div class="qv-opts">${colors}</div></div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn--primary btn--block" data-qv-add><span>Add to Bag — ${money(p.price)}</span></button>
+      </div>
+      <a class="qv-view-full link-underline" href="product.html?id=${p.id}">View full details</a>`;
+    applyImages(media);
+  }
+  function openQuickView(id) {
+    const p = window.ZERO.getProduct(id); if (!p) { location.href = `product.html?id=${id}`; return; }
+    qvState = { product: p, size: (p.sizes || []).find(s => !(p.oos || []).includes(s)) || null, color: (p.colors || [])[0] || null };
+    ensureQuickViewUI();
+    renderQuickView();
+    $("#qvOverlay").classList.add("open");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => $("[data-qv-close]")?.focus(), 60);
+  }
+  function closeQuickView() { $("#qvOverlay")?.classList.remove("open"); document.body.classList.remove("no-scroll"); }
+  window.ZERO.openQuickView = openQuickView;
+
+  /* ---------- Parallax + scroll progress (cinematic depth) ---------- */
+  function initScrollFx() {
+    if (!$(".zx-progress")) {
+      const bar = document.createElement("div"); bar.className = "zx-progress"; document.body.appendChild(bar);
+    }
+    const bar = $(".zx-progress");
+    const parallax = $$("[data-parallax], .hero__bg .ph");
+    const onScroll = () => {
+      const st = window.scrollY || document.documentElement.scrollTop;
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+      parallax.forEach(el => { el.style.transform = `translate3d(0, ${st * 0.18}px, 0) scale(1.12)`; });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  /* ---------- Skeleton loaders (perceived performance) ---------- */
+  function injectSkeletons() {
+    const skelCard = `<div class="zx-skel-card"><div class="zx-skel zx-skel-img"></div><div class="zx-skel zx-skel-line"></div><div class="zx-skel zx-skel-line sm"></div></div>`;
+    ["#featuredGrid", "#shopGrid", "#relatedGrid", "#fbtGrid"].forEach(sel => {
+      const grid = $(sel);
+      if (grid && !grid.children.length) grid.innerHTML = Array(sel === "#shopGrid" ? 6 : 4).fill(skelCard).join("");
+    });
+  }
+
   /* ---------- Back to top ---------- */
   function initToTop() {
     if ($(".to-top")) return;
@@ -545,6 +629,7 @@
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if ($("#searchOverlay")?.classList.contains("open")) closeSearch();
+      else if ($("#qvOverlay")?.classList.contains("open")) closeQuickView();
       else if ($("#cartDrawer")?.classList.contains("open")) closeCart();
       else if ($("#mobileNav")?.classList.contains("open")) setMobileNav(false);
     });
@@ -593,6 +678,23 @@
         const input = $("#searchInput");
         if (input) { input.value = term; renderSearch(term); input.focus(); }
       }
+
+      // Quick-view interactions
+      const qv = t.closest("[data-quickview]");
+      if (qv) { e.preventDefault(); openQuickView(qv.getAttribute("data-quickview")); }
+      if (t.closest("[data-qv-close]") || (t.id === "qvOverlay")) { closeQuickView(); }
+      const qvSize = t.closest("[data-qv-size]");
+      if (qvSize) { qvState.size = qvSize.getAttribute("data-qv-size"); $$("[data-qv-size]").forEach(b => b.classList.toggle("active", b === qvSize)); }
+      const qvColor = t.closest("[data-qv-color]");
+      if (qvColor) {
+        qvState.color = qvColor.getAttribute("data-qv-color");
+        $$("[data-qv-color]").forEach(b => b.classList.toggle("active", b === qvColor));
+        const cn = $("[data-qv-colorname]"); if (cn) cn.textContent = colorLabel(qvState.color);
+      }
+      if (t.closest("[data-qv-add]")) {
+        const p = qvState.product;
+        if (p) { addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: qvState.size, colorName: colorLabel(qvState.color) }); closeQuickView(); }
+      }
     });
 
     // Debounced live search
@@ -622,6 +724,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     initLoader();
     if (window.ZERO_PAGE !== undefined) window.ZERO.mount(window.ZERO_PAGE);
+    injectSkeletons();
     bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y(); initToTop();
+    initScrollFx();
   });
 })();

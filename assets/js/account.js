@@ -125,14 +125,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  const orderStep = { created: 0, awaiting_payment: 0, paid: 1, in_production: 1, printing: 2, quality_check: 3, ready_to_ship: 3, shipped: 4, delivered: 5, cancelled: 0, refunded: 1 };
+  const orderStep = { created: 0, awaiting_payment: 0, paid: 1, in_production: 2, printing: 2, quality_check: 3, ready_to_ship: 3, shipped: 4, delivered: 5, cancelled: 0, refunded: 1 };
+  const TL_STEPS = ["Placed", "Confirmed", "Production", "Quality", "Shipped", "Delivered"];
+  function timelineHTML(status) {
+    const s = orderStep[status] ?? 0;
+    if (["cancelled", "refunded"].includes(status)) return "";
+    return `<div class="zx-timeline">${TL_STEPS.map((label, i) => `<div class="step ${i <= s ? "done" : ""}">${label}</div>`).join("")}</div>`;
+  }
   function orderRow(o) {
     const shipped = (orderStep[o.status] ?? 0) >= 4;
     const summary = (o.items || []).map(i => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ") || "Order";
-    return `<div class="order-row"><div class="ph" style="width:48px;height:58px"></div>
-      <div><b>${esc(o.orderNumber)}</b><br><small class="muted">${esc(summary)} · ${money((o.totalCents || 0) / 100)}</small></div>
-      <span class="status-pill ${shipped ? "ship" : "prod"}">${esc((o.status || "").replace(/_/g, " "))}</span>
-      <a href="tracking.html?order=${encodeURIComponent(o.orderNumber)}" class="link-underline">Track</a></div>`;
+    return `<div class="order-row">
+        <div class="ph" style="width:48px;height:58px"></div>
+        <div><b>${esc(o.orderNumber)}</b><br><small class="muted">${esc(summary)} · ${money((o.totalCents || 0) / 100)}</small></div>
+        <span class="status-pill ${shipped ? "ship" : "prod"}">${esc((o.status || "").replace(/_/g, " "))}</span>
+        <a href="tracking.html?order=${encodeURIComponent(o.orderNumber)}" class="link-underline">Track</a>
+      </div>${timelineHTML(o.status)}`;
   }
 
   function panels() {

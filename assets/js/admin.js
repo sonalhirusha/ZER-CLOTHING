@@ -61,7 +61,7 @@
     });
   }
 
-  const TABS = [["analytics", "Analytics"], ["orders", "Orders"], ["payments", "Payments"], ["customers", "Customers"], ["products", "Products"], ["inventory", "Inventory"], ["tickets", "Support"]];
+  const TABS = [["analytics", "Analytics"], ["alerts", "Alerts"], ["orders", "Orders"], ["payments", "Payments"], ["customers", "Customers"], ["products", "Products"], ["inventory", "Inventory"], ["tickets", "Support"]];
 
   function renderShell(active) {
     root.innerHTML = `
@@ -83,6 +83,7 @@
     const main = $("#adminMain");
     try {
       if (tab === "analytics") return renderAnalytics(main);
+      if (tab === "alerts") return renderAlerts(main);
       if (tab === "orders") return renderOrders(main);
       if (tab === "payments") return renderPayments(main);
       if (tab === "customers") return renderCustomers(main);
@@ -112,6 +113,18 @@
       <table><thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead><tbody>
         ${(a.topProducts || []).map(p => `<tr><td>${esc(p.name)}</td><td>${p.units}</td><td>${money(p.revenueCents)}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">No sales yet</td></tr>`}
       </tbody></table>`;
+  }
+
+  async function renderAlerts(main) {
+    const data = await api("/admin/notifications");
+    const dot = { info: "#c8c8cc", success: "#34d375", danger: "#ff5a5a" };
+    main.innerHTML = `<h1 class="admin-title">Alerts <span class="pill">${data.unread} recent</span></h1>
+      ${(data.notifications || []).map(n => `<div class="checkout-card" style="padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
+        <span style="width:9px;height:9px;border-radius:50%;background:${dot[n.level] || "#c8c8cc"};flex:none"></span>
+        <div style="flex:1"><b>${esc(n.title)}</b> <small class="muted">· ${new Date(n.at).toLocaleString()}</small><br><small class="muted">${esc(n.body || "")}</small></div>
+        ${n.link ? `<a class="link-underline" data-goto-order="${esc(n.link)}">Open</a>` : ""}
+      </div>`).join("") || `<p class="muted">No recent activity.</p>`}`;
+    $$("[data-goto-order]").forEach(a => a.addEventListener("click", () => renderShell("orders")));
   }
 
   const STATUSES = ["created", "awaiting_payment", "paid", "in_production", "printing", "quality_check", "ready_to_ship", "shipped", "delivered", "cancelled", "refunded", "on_hold"];
