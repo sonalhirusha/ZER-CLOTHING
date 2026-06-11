@@ -851,3 +851,83 @@ main:focus, [tabindex="-1"]:focus { outline: none; }
 
 /* Inputs: soft focus glow for a more premium feel */
 .field input:focus, .field select:focus, .field textarea:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
+
+
+/* ====================================================================
+   NEW UX COMPONENTS  ·  search, free-ship progress, skeletons
+   ==================================================================== */
+
+/* ---- Search overlay ---- */
+.search-overlay {
+  position: fixed; inset: 0; z-index: 1600; display: none;
+  background: rgba(0,0,0,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  padding: clamp(14px, 6vh, 90px) var(--gutter) 40px;
+}
+.search-overlay.open { display: block; animation: fadeUp 0.3s var(--ease); }
+.search-panel { width: 100%; max-width: 760px; margin: 0 auto; }
+.search-bar {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--near-black);
+  padding: 8px 10px 8px 16px;
+}
+.search-bar svg { width: 22px; height: 22px; stroke: var(--gray-400); flex-shrink: 0; }
+.search-bar input {
+  flex: 1; background: transparent; border: 0; color: var(--white);
+  font-size: 1.05rem; padding: 12px 4px; letter-spacing: 0.01em;
+}
+.search-bar input:focus { outline: none; }
+.search-results { margin-top: 26px; }
+.search-hint { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 16px; }
+.search-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.search-card { display: flex; gap: 14px; align-items: center; border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px; transition: border-color var(--t-fast), background var(--t-fast); }
+.search-card:hover { border-color: var(--line); background: var(--panel); }
+.search-card .ph { width: 64px; height: 80px; border-radius: 4px; flex-shrink: 0; }
+.search-card__meta { display: flex; flex-direction: column; gap: 3px; }
+.search-card__meta b { font-size: 0.9rem; }
+.search-price { font-family: var(--font-display); font-size: 0.95rem; margin-top: 2px; }
+.search-empty { text-align: center; padding: 40px 10px; }
+.search-empty b { font-size: 1.1rem; }
+.search-empty .chip-row { justify-content: center; margin-top: 16px; }
+@media (max-width: 600px) { .search-grid { grid-template-columns: 1fr; } }
+
+/* ---- Free-shipping progress bar (cart drawer) ---- */
+.ship-progress { margin-bottom: 18px; }
+.ship-progress__label { font-size: 0.8rem; color: var(--gray-300); margin-bottom: 9px; letter-spacing: 0.01em; }
+.ship-progress__label b { color: var(--white); }
+.ship-progress__bar { height: 5px; border-radius: 40px; background: var(--panel-2); overflow: hidden; }
+.ship-progress__bar span { display: block; height: 100%; border-radius: 40px; background: var(--gradient-silver); transition: width var(--t-med) var(--ease); }
+.ship-progress.is-unlocked .ship-progress__bar span { background: #34d375; }
+
+/* ---- Skeleton loading shimmer ---- */
+.skeleton { position: relative; overflow: hidden; background: var(--panel); border-radius: var(--radius); }
+.skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); animation: skeleton 1.3s infinite; }
+.skel-card { aspect-ratio: 3/4; }
+@keyframes skeleton { to { transform: translateX(100%); } }
+
+/* ---- Back-to-top ---- */
+.to-top {
+  position: fixed; right: 22px; bottom: 88px; z-index: 790;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--panel-2); border: 1px solid var(--line);
+  display: grid; place-items: center; opacity: 0; pointer-events: none;
+  transform: translateY(10px); transition: opacity var(--t-fast), transform var(--t-fast), background var(--t-fast);
+}
+.to-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.to-top:hover { background: var(--white); }
+.to-top:hover svg { stroke: var(--black); }
+.to-top svg { width: 20px; height: 20px; stroke: var(--white); transition: stroke var(--t-fast); }
+
+/* ---- Button busy state ---- */
+.btn.is-busy { opacity: 0.7; pointer-events: none; position: relative; }
+.btn.is-busy span { visibility: hidden; }
+.btn.is-busy::before { content: ""; position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Tracking: not-found state ---- */
+.track-empty { text-align: center; padding: 34px 8px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.track-empty b { font-size: 1.05rem; }
+
+/* ---- Reduced motion: stop the new looping animations too ---- */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after, .btn.is-busy::before { animation: none !important; }
+}

@@ -1,7 +1,7 @@
 /* ZERØ — Checkout */
 document.addEventListener("DOMContentLoaded", function () {
-  const { $, $$, money, getCart, cartTotal, toast } = window.ZERO;
-  const state = { shipping: SHIPPING[1], pay: "card", discount: 0 };
+  const { $, $$, money, getCart, cartTotal, toast, online } = window.ZERO;
+  const state = { shipping: SHIPPING[1], pay: "card", discount: 0, coupon: null };
 
   // Dropdowns
   $("#provinceSel").innerHTML = '<option value="">Select province</option>' + SL_PROVINCES.map(p => `<option>${p}</option>`).join("");
@@ -44,13 +44,17 @@ document.addEventListener("DOMContentLoaded", function () {
           <b>${money(c.price * c.qty)}</b></div>`).join("");
     }
     const sub = cartTotal();
-    const ship = (sub >= 15000 && state.shipping.id !== "express") ? 0 : state.shipping.price;
-    const total = Math.max(0, sub - state.discount) + ship;
+    let ship = (sub >= 15000 && state.shipping.id !== "express") ? 0 : state.shipping.price;
+    let discount = 0;
+    if (state.coupon === "ZERO10") discount = Math.round(sub * 0.1);
+    if (state.coupon === "FREESHIP") ship = 0;
+    const total = Math.max(0, sub - discount) + ship;
+    state.discount = discount;
     $("#sumSub").textContent = money(sub);
     $("#sumShip").textContent = ship ? money(ship) : "FREE";
     $("#sumTotal").textContent = money(total);
-    $("#discountLine").style.display = state.discount ? "flex" : "none";
-    $("#sumDisc").textContent = "- " + money(state.discount);
+    $("#discountLine").style.display = discount ? "flex" : "none";
+    $("#sumDisc").textContent = "- " + money(discount);
     state.total = total;
   }
 
@@ -127,19 +131,86 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $("#applyCoupon").addEventListener("click", () => {
     const code = $(".coupon-row input").value.trim().toUpperCase();
-    if (code === "ZERO10") { state.discount = Math.round(cartTotal() * 0.1); toast("ZERO10 applied — 10% off"); }
-    else if (code === "FREESHIP") { state.discount = state.shipping.price; toast("Free shipping applied"); }
-    else if (code) { toast("Invalid coupon code"); state.discount = 0; }
-    renderSummary();
+    if (code === "ZERO10") { state.coupon = code; toast("ZERO10 applied — 10% off"); }
+    else if (code === "FREESHIP") { state.coupon = code; toast("FREESHIP applied — free shipping"); }
+    else if (code) { state.coupon = null; toast("Invalid coupon code"); }
+    renderSummary(); updateWaLink();
   });
+
+  function genOrderNo() {
+    const d = new Date();
+    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    return "ZRO-" + ymd + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+  }
+
+  function collectAddress(form) {
+    const data = {};
+    form.querySelectorAll(".field").forEach(f => {
+      const label = (f.querySelector("label")?.textContent || "").replace(/\(optional\)/i, "").trim();
+      const input = f.querySelector("input, select, textarea");
+      if (label && input) data[label] = (input.value || "").trim();
+    });
+    return data;
+  }
+
+  // Map the on-page state to the live API contract (used only when a backend is connected).
+  function buildApiPayload(order, d) {
+    const methodMap = { speed: "speed_post", standard: "standard", express: "express", pickup: "pickup" };
+    const payMap = { card: "payhere", ezcash: "ezcash", bank: "bank_transfer", cod: "cod" };
+    return {
+      email: d["Email"] || "",
+      items: getCart().map(c => ({ variantId: c.variantId || c.id, quantity: c.qty })),
+      couponCode: state.coupon || undefined,
+      shippingMethod: methodMap[order.shippingMethod] || "standard",
+      paymentMethod: payMap[order.payment] || "cod",
+      shippingAddress: {
+        recipientName: `${d["First Name"] || ""} ${d["Last Name"] || ""}`.trim(),
+        phone: d["Phone Number"] || "", line1: d["Address Line 1"] || "", line2: d["Address Line 2"] || "",
+        city: d["City"] || "", district: d["District"] || "", province: d["Province"] || "",
+        postalCode: d["Postal Code"] || "", country: "LK"
+      }
+    };
+  }
 
   $("#checkoutForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!getCart().length) { toast("Your bag is empty"); return; }
-    const order = "ZRO-" + Math.random().toString(36).slice(2, 7).toUpperCase();
-    window.ZERO.store.set("zero_last_order", { order, total: state.total, when: Date.now() });
-    window.ZERO.store.set("zero_cart", []);
-    toast("Order placed — " + order);
-    setTimeout(() => location.href = "tracking.html?order=" + order, 900);
+    const form = e.target;
+    const cart = getCart();
+    if (!cart.length) { toast("Your bag is empty"); return; }
+    // Required-field validation with focus + feedback.
+    const missing = [...form.querySelectorAll("[required]")].find(f => !String(f.value || "").trim());
+    if (missing) { missing.focus(); missing.scrollIntoView({ block: "center", behavior: "smooth" }); toast("Please complete all required fields"); return; }
+
+    const d = collectAddress(form);
+    const sub = cartTotal();
+    let ship = (sub >= 15000 && state.shipping.id !== "express") ? 0 : state.shipping.price;
+    if (state.coupon === "FREESHIP") ship = 0;
+    const discount = state.coupon === "ZERO10" ? Math.round(sub * 0.1) : 0;
+    const total = Math.max(0, sub - discount) + ship;
+
+    const order = {
+      order: genOrderNo(),
+      items: cart.map(c => ({ name: c.name, qty: c.qty, price: c.price, size: c.size, colorName: c.colorName, note: c.note, label: c.label })),
+      subtotal: sub, shipping: ship, discount, total,
+      payment: state.pay, shippingMethod: state.shipping.id,
+      customer: { name: `${d["First Name"] || ""} ${d["Last Name"] || ""}`.trim(), email: d["Email"] || "", phone: d["Phone Number"] || "" },
+      address: d, placedAt: Date.now(), status: 0
+    };
+
+    const btn = form.querySelector('button[type="submit"]');
+    btn?.classList.add("is-busy");
+    const finish = (ord) => {
+      window.ZERO.saveOrder(ord);
+      window.ZERO.store.set("zero_cart", []);
+      toast("Order placed — " + ord.order);
+      setTimeout(() => location.href = "tracking.html?order=" + ord.order, 700);
+    };
+    if (online()) {
+      window.ZERO.api.post("/orders", buildApiPayload(order, d), { "Idempotency-Key": order.order })
+        .then(res => finish({ ...order, order: res.orderNumber || order.order }))
+        .catch(() => finish(order));
+    } else {
+      setTimeout(() => finish(order), 450);
+    }
   });
 });

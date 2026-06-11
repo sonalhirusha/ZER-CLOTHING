@@ -9,9 +9,14 @@ proven pattern:
 - **Auth** — signup, login, logout, refresh (rotating tokens), email
   verification, forgot/reset password. Passwords hashed with argon2id; access
   tokens are short-lived JWTs; refresh tokens are random and stored hashed.
+- **Catalog** — `GET /products`, `GET /products/:slug`, `GET /categories`,
+  `GET /products/:slug/reviews`. Responses are shaped to match the existing
+  frontend exactly, so the static site switches to live data with one setting.
 - **Checkout/Orders** — `POST /checkout/quote` and idempotent `POST /orders`
   with **server-authoritative pricing** (client totals are ignored), stock
   reservation, order-number generation, and an order-confirmation email enqueue.
+- **Seed** — `prisma/seed.js` loads the same catalog the site ships with, plus
+  the `ZERO10` / `FREESHIP` coupons and a super-admin user.
 - **Cross-cutting** — Helmet, CORS allowlist, rate limiting, Zod validation,
   centralised error handling, transactional email outbox.
 
@@ -39,8 +44,24 @@ cp .env.example .env          # then fill in DATABASE_URL + secrets
 npm install
 npm run prisma:generate
 npm run prisma:migrate        # creates all tables
+npm run seed                  # loads the catalog, coupons + admin user
 npm run dev                   # http://localhost:4000/health
 ```
+
+## Connect the live site to this API
+
+The static frontend ships in **offline mode** (`window.ZERO.API_BASE === ""`) so
+it works on GitHub Pages with bundled demo data. To switch the whole site to the
+live backend, set the base URL **before** `app.js` loads — e.g. add this to each
+page (or inject it globally):
+
+```html
+<script>window.ZERO_API_BASE = "https://api.zeroclothing.lk/api/v1";</script>
+```
+
+Once set, `ZERO.loadProducts()` pulls the catalog from `/products`, checkout
+POSTs to `/orders`, tracking reads `/orders/:number/tracking`, and contact posts
+to `/contact` — all with automatic fallback if a request fails.
 
 ## Try it
 
@@ -71,8 +92,9 @@ src/
   services/email.js      transactional email outbox (enqueue)
   modules/
     auth/                signup/login/verify/reset (implemented)
+    catalog/             products/categories/reviews (implemented)
     orders/              quote + idempotent order create (implemented)
-    ...                  catalog, payments, shipping, admin (to build)
+    ...                  payments, shipping, admin (to build)
 ```
 
 ## How the existing site connects

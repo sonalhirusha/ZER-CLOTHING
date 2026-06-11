@@ -155,9 +155,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Save design
   $("#saveDesign").addEventListener("click", () => {
+    const design = {
+      type: D.type.name, garmentType: D.type.id, garment: D.garment,
+      text: D.text, font: D.font, textColor: D.textColor, zone: D.zone,
+      total: D.total, when: Date.now()
+    };
     const saved = store.get("zero_designs", []);
-    saved.push({ type: D.type.name, garment: D.garment, text: D.text, font: D.font, total: D.total, when: Date.now() });
+    saved.unshift(design);
     store.set("zero_designs", saved);
+    // When the backend is connected, also persist server-side (artwork upload is
+    // handled separately via a presigned URL — see the architecture doc).
+    if (window.ZERO.online()) {
+      window.ZERO.api.post("/designs", {
+        garmentType: D.type.id, garmentColor: D.garment,
+        totalCents: Math.round(D.total * 100), spec: design
+      }).catch(() => {});
+    }
     toast("Design saved to your account");
   });
 });

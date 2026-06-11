@@ -1,6 +1,21 @@
-/* ZERØ — Account dashboard */
+/* ZERØ — Account dashboard (driven by the customer's real local data;
+   swaps to the live API automatically once ZERO.API_BASE is set). */
 document.addEventListener("DOMContentLoaded", function () {
   const { $, $$, money, productCard, store, getWishlist, toast, initReveal } = window.ZERO;
+  const esc = window.ZERO.escapeText;
+
+  const profile = store.get("zero_profile", { first: "", last: "", email: "", phone: "" });
+  const fullName = `${profile.first || ""} ${profile.last || ""}`.trim();
+
+  // Personalise the hero greeting.
+  const hero = $(".page-hero h1");
+  if (hero) hero.textContent = fullName ? `Hi, ${profile.first}` : "Hi there";
+
+  function getOrders() { return window.ZERO.getOrders(); }
+  function totalSpent() { return getOrders().reduce((s, o) => s + (o.total || 0), 0); }
+  function points() { return Math.floor(totalSpent() / 100); }
+  function tier() { const p = points(); return p >= 5000 ? "Platinum" : p >= 2500 ? "Gold" : p >= 1000 ? "Silver" : "Bronze"; }
+  function orderStatus(o) { return (Date.now() - (o.placedAt || Date.now())) > 4 * 86400000 ? ["ship", "Delivered"] : ["prod", "In Production"]; }
 
   const NAV = [
     ["dashboard", "Dashboard", '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'],
@@ -15,27 +30,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $("#acctNav").innerHTML = NAV.map((n, i) => `<a href="#${n[0]}" data-tab="${n[0]}" class="${i === 0 ? "active" : ""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">${n[2]}</svg>${n[1]}</a>`).join("");
 
+  function orderRow(o) {
+    const [cls, label] = orderStatus(o);
+    const summary = (o.items || []).map(i => `${i.name}${i.qty > 1 ? ` ×${i.qty}` : ""}`).join(", ") || "Order";
+    return `<div class="order-row"><div class="ph" style="width:48px;height:58px"></div>
+      <div><b>${esc(o.order)}</b><br><small class="muted">${esc(summary)} · ${money(o.total || 0)}</small></div>
+      <span class="status-pill ${cls}">${label}</span>
+      <a href="tracking.html?order=${encodeURIComponent(o.order)}" class="link-underline">Track</a></div>`;
+  }
+
   function panels() {
     const wl = getWishlist().map(window.ZERO.getProduct).filter(Boolean);
     const designs = store.get("zero_designs", []);
-    const last = store.get("zero_last_order", null);
+    const orders = getOrders();
+    const lastAddr = orders.find(o => o.address) ? orders.find(o => o.address).address : null;
     return {
       dashboard: `
         <h2 class="h-md mb-m">Dashboard</h2>
         <div class="grid cols-3 mb-m">
-          <div class="stat-card"><div class="n silver-text">${last ? 1 : 12}</div><div class="l">Total Orders</div></div>
+          <div class="stat-card"><div class="n silver-text">${orders.length}</div><div class="l">Total Orders</div></div>
           <div class="stat-card"><div class="n silver-text">${wl.length}</div><div class="l">Wishlist Items</div></div>
-          <div class="stat-card"><div class="n silver-text">2,450</div><div class="l">Reward Points</div></div>
+          <div class="stat-card"><div class="n silver-text">${points().toLocaleString("en-LK")}</div><div class="l">Reward Points</div></div>
         </div>
-        ${last ? `<div class="order-row"><div class="ph" style="width:48px;height:58px"></div><div><b>${last.order}</b><br><small class="muted">Placed recently · ${money(last.total)}</small></div><span class="status-pill prod">In Production</span><a href="tracking.html?order=${last.order}" class="link-underline">Track</a></div>` : `<p class="muted">No recent orders yet. <a href="shop.html" class="link-underline">Start shopping</a></p>`}`,
-      orders: `<h2 class="h-md mb-m">Your Orders</h2>
-        ${["ZRO-9F2K1","ZRO-7H4L8","ZRO-2M9P3"].map((o, i) => `<div class="order-row"><div class="ph" style="width:48px;height:58px"></div><div><b>${o}</b><br><small class="muted">${["Acid Wash Hoodie","Oversized Tee ×2","Couple Set"][i]} · ${money([8900,8400,15900][i])}</small></div><span class="status-pill ${i===0?"prod":"ship"}">${i===0?"In Production":"Delivered"}</span><a href="tracking.html" class="link-underline">Track</a></div>`).join("")}`,
+        ${orders.length ? orders.slice(0, 3).map(orderRow).join("") : `<p class="muted">No orders yet. <a href="shop.html" class="link-underline">Start shopping</a></p>`}`,
+      orders: `<h2 class="h-md mb-m">Your Orders</h2>${orders.length ? orders.map(orderRow).join("") : `<p class="muted">You haven't placed any orders yet. <a href="shop.html" class="link-underline">Browse the shop</a></p>`}`,
       wishlist: `<h2 class="h-md mb-m">Wishlist</h2>${wl.length ? `<div class="grid cols-3 pgrid">${wl.map(productCard).join("")}</div>` : `<p class="muted">Your wishlist is empty. <a href="shop.html" class="link-underline">Discover pieces</a></p>`}`,
-      designs: `<h2 class="h-md mb-m">Saved Designs</h2>${designs.length ? `<div class="grid cols-3">${designs.map(d => `<div class="checkout-card"><div class="ph" style="aspect-ratio:1;border-radius:6px;margin-bottom:14px" data-label="DESIGN"></div><b>${d.type}</b><br><small class="muted">${d.text ? '"'+d.text+'"' : "Image print"} · ${money(d.total)}</small><a href="customize.html" class="btn btn--ghost btn--block btn--sm" style="margin-top:12px"><span>Edit & Order</span></a></div>`).join("")}</div>` : `<p class="muted">No saved designs yet. <a href="customize.html" class="link-underline">Open the studio</a></p>`}`,
-      addresses: `<h2 class="h-md mb-m">Saved Addresses</h2><div class="grid cols-2"><div class="checkout-card"><span class="status-pill ship" style="margin-bottom:12px;display:inline-block">Default</span><p>Nimal Perera<br>No. 24, Galle Road<br>Colombo 03, Western<br>00300 · Sri Lanka</p></div><div class="checkout-card flex center" style="justify-content:center;min-height:160px;border-style:dashed"><button class="link-underline">+ Add New Address</button></div></div>`,
-      payments: `<h2 class="h-md mb-m">Payment Methods</h2><div class="grid cols-2"><div class="checkout-card flex between center"><div><b>Visa ···· 4291</b><br><small class="muted">Expires 09/28</small></div><span class="pay-icons"><span>VISA</span></span></div><div class="checkout-card flex center" style="justify-content:center;min-height:120px;border-style:dashed"><button class="link-underline">+ Add Card</button></div></div>`,
-      rewards: `<h2 class="h-md mb-m">Loyalty & Referrals</h2><div class="grid cols-2 mb-m"><div class="stat-card"><div class="n silver-text">2,450</div><div class="l">ZERØ Points · Rs 2,450 value</div></div><div class="stat-card"><div class="n silver-text">Gold</div><div class="l">Membership Tier</div></div></div><div class="checkout-card"><p class="eyebrow mb-m">Refer A Friend</p><p class="muted mb-m">Share your code — you both get Rs 1,000 off.</p><div class="coupon-row"><input value="ZERO-NIMAL24" readonly><button class="btn btn--primary btn--sm" data-copy><span>Copy</span></button></div></div>`,
-      settings: `<h2 class="h-md mb-m">Profile Settings</h2><div class="checkout-card" style="max-width:560px"><div class="field--row"><div class="field"><label>First Name</label><input value="Nimal"></div><div class="field"><label>Last Name</label><input value="Perera"></div></div><div class="field"><label>Email</label><input value="nimal@email.lk"></div><div class="field"><label>Phone</label><input value="077 123 4567"></div><button class="btn btn--primary" data-save-profile><span>Save Changes</span></button></div>`
+      designs: `<h2 class="h-md mb-m">Saved Designs</h2>${designs.length ? `<div class="grid cols-3">${designs.map(d => `<div class="checkout-card"><div class="ph" style="aspect-ratio:1;border-radius:6px;margin-bottom:14px" data-label="DESIGN"></div><b>${esc(d.type)}</b><br><small class="muted">${d.text ? '"' + esc(d.text) + '"' : "Image print"} · ${money(d.total)}</small><a href="customize.html" class="btn btn--ghost btn--block btn--sm" style="margin-top:12px"><span>Edit & Order</span></a></div>`).join("")}</div>` : `<p class="muted">No saved designs yet. <a href="customize.html" class="link-underline">Open the studio</a></p>`}`,
+      addresses: `<h2 class="h-md mb-m">Saved Addresses</h2><div class="grid cols-2">${lastAddr ? `<div class="checkout-card"><span class="status-pill ship" style="margin-bottom:12px;display:inline-block">Most recent</span><p>${esc(lastAddr["First Name"] || "")} ${esc(lastAddr["Last Name"] || "")}<br>${esc(lastAddr["Address Line 1"] || "")}<br>${esc(lastAddr["City"] || "")}, ${esc(lastAddr["Province"] || "")}<br>${esc(lastAddr["Postal Code"] || "")} · Sri Lanka</p></div>` : `<div class="checkout-card"><p class="muted">No saved addresses yet — they'll appear here after your first order.</p></div>`}<div class="checkout-card flex center" style="justify-content:center;min-height:160px;border-style:dashed"><a href="checkout.html" class="link-underline">+ Add at checkout</a></div></div>`,
+      payments: `<h2 class="h-md mb-m">Payment Methods</h2><div class="checkout-card"><p class="muted">For your security, ZERØ never stores raw card details. When the secure payment gateway is connected, your saved cards (as encrypted tokens) will appear here. Until then, you can pay by card, EZ Cash, bank transfer or cash on delivery at checkout.</p></div>`,
+      rewards: `<h2 class="h-md mb-m">Loyalty & Referrals</h2><div class="grid cols-2 mb-m"><div class="stat-card"><div class="n silver-text">${points().toLocaleString("en-LK")}</div><div class="l">ZERØ Points · Rs ${points().toLocaleString("en-LK")} value</div></div><div class="stat-card"><div class="n silver-text">${tier()}</div><div class="l">Membership Tier</div></div></div><div class="checkout-card"><p class="eyebrow mb-m">Refer A Friend</p><p class="muted mb-m">Share your code — you both get Rs 1,000 off.</p><div class="coupon-row"><input id="refCode" value="ZERO-${(profile.first || "FRIEND").toUpperCase().slice(0, 8)}" readonly><button class="btn btn--primary btn--sm" data-copy><span>Copy</span></button></div></div>`,
+      settings: `<h2 class="h-md mb-m">Profile Settings</h2><div class="checkout-card" style="max-width:560px"><div class="field--row"><div class="field"><label>First Name</label><input id="pfFirst" value="${esc(profile.first)}" placeholder="First name"></div><div class="field"><label>Last Name</label><input id="pfLast" value="${esc(profile.last)}" placeholder="Last name"></div></div><div class="field"><label>Email</label><input id="pfEmail" type="email" value="${esc(profile.email)}" placeholder="you@email.lk"></div><div class="field"><label>Phone</label><input id="pfPhone" type="tel" value="${esc(profile.phone)}" placeholder="077 123 4567"></div><button class="btn btn--primary" data-save-profile><span>Save Changes</span></button></div>`
     };
   }
 
@@ -49,8 +73,14 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("click", (e) => {
     const tab = e.target.closest("[data-tab]");
     if (tab) { e.preventDefault(); show(tab.getAttribute("data-tab")); history.replaceState(null, "", "#" + tab.getAttribute("data-tab")); }
-    if (e.target.closest("[data-copy]")) { navigator.clipboard?.writeText("ZERO-NIMAL24"); toast("Referral code copied"); }
-    if (e.target.closest("[data-save-profile]")) { e.preventDefault(); toast("Profile updated"); }
+    if (e.target.closest("[data-copy]")) { const v = $("#refCode")?.value || ""; navigator.clipboard?.writeText(v); toast("Referral code copied"); }
+    if (e.target.closest("[data-save-profile]")) {
+      e.preventDefault();
+      const next = { first: $("#pfFirst").value.trim(), last: $("#pfLast").value.trim(), email: $("#pfEmail").value.trim(), phone: $("#pfPhone").value.trim() };
+      store.set("zero_profile", next);
+      if (hero) hero.textContent = next.first ? `Hi, ${next.first}` : "Hi there";
+      toast("Profile updated");
+    }
   });
 
   show((location.hash || "#dashboard").slice(1));

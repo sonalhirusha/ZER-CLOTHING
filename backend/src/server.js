@@ -10,6 +10,7 @@ import { generalLimiter } from "./middleware/rateLimit.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
+import catalogRoutes from "./modules/catalog/catalog.routes.js";
 import orderRoutes from "./modules/orders/orders.routes.js";
 
 const app = express();
@@ -40,6 +41,7 @@ app.get("/health", (req, res) => {
 
 // API v1
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1", catalogRoutes);
 app.use("/api/v1", orderRoutes);
 
 // 404 + error handling (must be last)

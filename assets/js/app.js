@@ -12,6 +12,77 @@
   };
   window.ZERO = { $, $$, money, store };
 
+  /* ---------- API client (graceful static fallback) ----------
+     Set window.ZERO_API_BASE (or ZERO.API_BASE) to your deployed API, e.g.
+     "https://api.zeroclothing.lk/api/v1", to switch from static demo data to the
+     live backend. Empty string (default on GitHub Pages) = pure static mode. */
+  window.ZERO.API_BASE = window.ZERO_API_BASE || "";
+  const online = () => !!window.ZERO.API_BASE;
+  window.ZERO.online = online;
+
+  async function apiRequest(path, { method = "GET", body, headers, timeout = 9000 } = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    try {
+      const res = await fetch(window.ZERO.API_BASE + path, {
+        method,
+        headers: { "Content-Type": "application/json", ...(headers || {}) },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error((data.error && data.error.message) || "Request failed"), { status: res.status, data });
+      return data;
+    } finally { clearTimeout(timer); }
+  }
+  window.ZERO.api = {
+    get: (p) => apiRequest(p),
+    post: (p, body, headers) => apiRequest(p, { method: "POST", body, headers })
+  };
+
+  /* ---------- Small helpers ---------- */
+  const COLOR_NAMES = { "#0a0a0a": "Black", "#000000": "Black", "#f5f5f5": "Bone", "#ffffff": "White", "#7d7d7d": "Ash", "#3a3a3a": "Charcoal", "#1a2942": "Navy" };
+  const colorLabel = (hex) => COLOR_NAMES[hex] || "Black";
+  window.ZERO.colorLabel = colorLabel;
+  const escapeText = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  window.ZERO.escapeText = escapeText;
+  const FREE_SHIP = 15000;
+
+  /* ---------- Catalog registry (API with static fallback) ---------- */
+  const STATIC_PRODUCTS = (typeof PRODUCTS !== "undefined") ? PRODUCTS : [];
+  window.ZERO._products = STATIC_PRODUCTS.slice();
+  function mapApiProduct(r) {
+    return {
+      id: r.id || r.slug, name: r.name, cat: r.cat || r.category || "", collection: r.collection || "",
+      price: r.price, was: r.was || 0, rating: r.rating || 0, reviews: r.reviews || 0,
+      colors: r.colors || [], sizes: r.sizes || [], oos: r.oos || [], tags: r.tags || [],
+      badge: r.badge || "", popularity: r.popularity || 0, date: r.date || 0,
+      label: r.label || String(r.name || "").toUpperCase(), img: r.img || "", img2: r.img2 || ""
+    };
+  }
+  let _catalogPromise = null;
+  window.ZERO.loadProducts = function () {
+    if (_catalogPromise) return _catalogPromise;
+    _catalogPromise = (async () => {
+      if (online()) {
+        try {
+          const rows = await window.ZERO.api.get("/products");
+          const list = Array.isArray(rows) ? rows : (rows.products || rows.data || []);
+          if (list.length) window.ZERO._products = list.map(mapApiProduct);
+        } catch (_) { /* keep static fallback */ }
+      }
+      return window.ZERO._products;
+    })();
+    return _catalogPromise;
+  };
+
+  /* ---------- Local order history (used until the API is connected) ---------- */
+  window.ZERO.getOrders = () => store.get("zero_orders", []);
+  window.ZERO.saveOrder = (o) => {
+    const all = store.get("zero_orders", []);
+    all.unshift(o); store.set("zero_orders", all); store.set("zero_last_order", o);
+  };
+
   let cart = store.get("zero_cart", []);
   let wishlist = store.get("zero_wishlist", []);
 
@@ -165,7 +236,7 @@
     </article>`;
   }
   window.ZERO.productCard = productCard;
-  window.ZERO.getProduct = (id) => PRODUCTS.find(p => p.id === id);
+  window.ZERO.getProduct = (id) => window.ZERO._products.find(p => p.id === id);
 
   /* ---------- Auto real-image loader ---------- */
   // Any element <div class="ph" data-img="path/to.jpg"> becomes a real photo.
@@ -219,7 +290,17 @@
         </div>
       </div>`).join("");
     const free = cartTotal() >= 15000;
-    foot.innerHTML = `
+    const sub = cartTotal();
+    const remaining = Math.max(0, FREE_SHIP - sub);
+    const pct = Math.min(100, Math.round((sub / FREE_SHIP) * 100));
+    const progress = `
+      <div class="ship-progress ${remaining === 0 ? "is-unlocked" : ""}">
+        <div class="ship-progress__label">${remaining > 0
+          ? `Add <b>${money(remaining)}</b> more for <b>FREE</b> shipping`
+          : `<b>Free islandwide shipping unlocked</b>`}</div>
+        <div class="ship-progress__bar"><span style="width:${pct}%"></span></div>
+      </div>`;
+    foot.innerHTML = progress + `
       <div class="cart-line"><span>Subtotal</span><b>${money(cartTotal())}</b></div>
       <div class="cart-line"><span>Shipping</span><b>${free ? "FREE" : "Calculated at checkout"}</b></div>
       <a href="checkout.html" class="btn btn--primary btn--block"><span>Checkout · ${money(cartTotal())}</span></a>
@@ -279,7 +360,78 @@
   }
   window.ZERO.setMobileNav = setMobileNav;
 
-  /* ---------- Scroll reveal ---------- */
+  /* ---------- Search overlay (real, debounced, with empty state) ---------- */
+  function ensureSearchUI() {
+    if ($("#searchOverlay")) return;
+    const el = document.createElement("div");
+    el.id = "searchOverlay";
+    el.className = "search-overlay";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Search products");
+    el.innerHTML = `
+      <div class="search-panel">
+        <div class="search-bar">
+          ${ICON.search}
+          <input id="searchInput" type="search" placeholder="Search hoodies, tees, acid wash…" autocomplete="off" aria-label="Search products">
+          <button class="icon-btn" data-search-close aria-label="Close search">${ICON.close}</button>
+        </div>
+        <div class="search-results" id="searchResults" aria-live="polite"></div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+  function openSearch() {
+    ensureSearchUI();
+    window.ZERO.loadProducts();
+    $("#searchOverlay").classList.add("open");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => $("#searchInput")?.focus(), 60);
+    renderSearch("");
+  }
+  function closeSearch() {
+    $("#searchOverlay")?.classList.remove("open");
+    document.body.classList.remove("no-scroll");
+  }
+  function searchCard(p) {
+    return `<a class="search-card" href="product.html?id=${p.id}">
+      <div class="ph ph-fashion" data-label="${p.label}" data-img="${p.img || ''}"></div>
+      <div class="search-card__meta"><b>${escapeText(p.name)}</b><small class="muted">${escapeText(p.cat)}</small>
+      <span class="search-price">${money(p.price)}</span></div></a>`;
+  }
+  function renderSearch(q) {
+    const box = $("#searchResults"); if (!box) return;
+    const list = window.ZERO._products || [];
+    const term = (q || "").trim().toLowerCase();
+    if (!term) {
+      const popular = [...list].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
+      box.innerHTML = `<p class="search-hint">Popular right now</p><div class="search-grid">${popular.map(searchCard).join("")}</div>`;
+      applyImages(box); return;
+    }
+    const hits = list.filter(p => (`${p.name} ${p.cat} ${p.collection} ${(p.tags || []).join(" ")}`).toLowerCase().includes(term));
+    if (!hits.length) {
+      const suggest = ["Acid Wash", "Oversized Tee", "Hoodie", "Couple Set"];
+      box.innerHTML = `<div class="search-empty"><b>No matches for “${escapeText(q)}”.</b>
+        <p class="muted">Try one of these instead:</p>
+        <div class="chip-row">${suggest.map(s => `<span class="chip" data-search-suggest="${s}">${s}</span>`).join("")}</div></div>`;
+      return;
+    }
+    box.innerHTML = `<p class="search-hint">${hits.length} result${hits.length !== 1 ? "s" : ""}</p><div class="search-grid">${hits.slice(0, 8).map(searchCard).join("")}</div>`;
+    applyImages(box);
+  }
+  window.ZERO.openSearch = openSearch;
+
+  /* ---------- Back to top ---------- */
+  function initToTop() {
+    if ($(".to-top")) return;
+    const btn = document.createElement("button");
+    btn.className = "to-top";
+    btn.setAttribute("aria-label", "Back to top");
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    document.body.appendChild(btn);
+    const onScroll = () => btn.classList.toggle("show", window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
   function initReveal() {
     const io = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in");
@@ -315,7 +467,8 @@
     // Close overlays with the Escape key (keyboard navigation)
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      if ($("#cartDrawer")?.classList.contains("open")) closeCart();
+      if ($("#searchOverlay")?.classList.contains("open")) closeSearch();
+      else if ($("#cartDrawer")?.classList.contains("open")) closeCart();
       else if ($("#mobileNav")?.classList.contains("open")) setMobileNav(false);
     });
   }
@@ -335,7 +488,7 @@
       if (qa) {
         e.preventDefault();
         const p = window.ZERO.getProduct(qa.getAttribute("data-quickadd"));
-        if (p) addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: p.sizes.find(s => !(p.oos||[]).includes(s)) });
+        if (p) addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: p.sizes.find(s => !(p.oos||[]).includes(s)), colorName: colorLabel((p.colors||[])[0]) });
       }
       const rm = t.closest("[data-remove]");
       if (rm) { cart = cart.filter(c => c.key !== rm.getAttribute("data-remove")); saveCart(); }
@@ -344,8 +497,34 @@
         const item = cart.find(c => c.key === qtyBtn.getAttribute("data-key"));
         if (item) { item.qty += parseInt(qtyBtn.getAttribute("data-qty")); if (item.qty < 1) cart = cart.filter(c => c !== item); saveCart(); }
       }
-      if (t.closest("[data-news]")) { e.preventDefault(); toast("Welcome to ZERØ — check your inbox"); }
-      if (t.closest("[data-search]")) { toast("Search coming soon"); }
+      const news = t.closest("[data-news]");
+      if (news) {
+        e.preventDefault();
+        const input = news.closest(".newsletter")?.querySelector("input");
+        const email = (input?.value || "").trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Enter a valid email"); input?.focus(); return; }
+        news.disabled = true;
+        const done = () => { toast("Welcome to ZERØ — your 10% code is on its way"); if (input) input.value = ""; news.disabled = false; };
+        if (online()) window.ZERO.api.post("/newsletter", { email }).then(done).catch(done);
+        else done();
+      }
+      if (t.closest("[data-search]")) { openSearch(); }
+      if (t.closest("[data-search-close]") || t.closest("#searchOverlay") === t) { closeSearch(); }
+      const suggest = t.closest("[data-search-suggest]");
+      if (suggest) {
+        const term = suggest.getAttribute("data-search-suggest");
+        const input = $("#searchInput");
+        if (input) { input.value = term; renderSearch(term); input.focus(); }
+      }
+    });
+
+    // Debounced live search
+    let searchTimer = null;
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "searchInput") return;
+      clearTimeout(searchTimer);
+      const val = e.target.value;
+      searchTimer = setTimeout(() => renderSearch(val), 180);
     });
     const header = $("#siteHeader");
     if (header) {
@@ -366,6 +545,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     initLoader();
     if (window.ZERO_PAGE !== undefined) window.ZERO.mount(window.ZERO_PAGE);
-    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y();
+    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y(); initToTop();
   });
 })();
