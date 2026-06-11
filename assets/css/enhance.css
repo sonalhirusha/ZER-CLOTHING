@@ -189,3 +189,47 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
   .zx-skel::after { display: none; }
 }
+
+
+
+/* =====================================================================
+   HERO — PREMIUM ANIMATED BACKDROP (fills the empty home space)
+   Generative luxury background: drifting steel/silver light mesh + a slow
+   moving spotlight + grain. Needs no image. If a real campaign photo is
+   uploaded to assets/images/hero.jpg it takes over (cover + parallax + sweep).
+   ===================================================================== */
+.hero__bg .ph {
+  background-color: #050507;
+  background-image:
+    radial-gradient(55% 75% at 18% 22%, rgba(150,156,170,.30), transparent 60%),
+    radial-gradient(45% 65% at 82% 28%, rgba(70,80,105,.34), transparent 62%),
+    radial-gradient(85% 95% at 60% 98%, rgba(210,210,222,.10), transparent 55%),
+    linear-gradient(160deg, #0d0d12 0%, #070709 55%, #000 100%);
+  background-size: 240% 240%, 240% 240%, 220% 220%, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 50% 100%, 0 0;
+  animation: zxHeroDrift 30s ease-in-out infinite alternate;
+}
+/* Moving spotlight sweep for cinematic life */
+.hero__bg .ph::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(38% 46% at 50% 38%, rgba(255,255,255,.14), transparent 60%);
+  mix-blend-mode: screen;
+  animation: zxHeroSpot 16s ease-in-out infinite alternate;
+}
+/* Fine film grain overlay (replaces the editorial caption text on the hero) */
+.hero__bg .ph::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* When a real photo is present, show it full-bleed and stop the gradient drift */
+.hero__bg .ph.ph--img { background-size: cover; background-position: center; animation: none; }
+.hero__bg .ph.ph--img::after { opacity: .07; }
+
+@keyframes zxHeroDrift {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  100% { background-position: 100% 100%, 0% 100%, 50% 0%, 0 0; }
+}
+@keyframes zxHeroSpot {
+  0%   { transform: translate(-5%, -3%); opacity: .55; }
+  100% { transform: translate(6%, 4%);  opacity: .95; }
+}

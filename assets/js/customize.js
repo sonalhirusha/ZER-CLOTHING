@@ -13,11 +13,13 @@ document.addEventListener("DOMContentLoaded", function () {
     prints: { front: false, back: false, sleeve: false }
   };
 
-  // Build type cards
+  // Build type cards. Thumbnails auto-load from assets/images/studio/<id>-front.png
+  // when present (applyImages probes + falls back to the styled placeholder).
   $("#typeGrid").innerHTML = CUSTOM_TYPES.map((t, i) => `
     <div class="type-card ${i === 0 ? "sel" : ""}" data-type="${t.id}">
-      <div class="ph" data-label="${t.label}"></div><b>${t.name}</b><small>${money(t.base)}</small>
+      <div class="ph" data-label="${t.label}" data-img="assets/images/studio/${t.id}-front.png"></div><b>${t.name}</b><small>${money(t.base)}</small>
     </div>`).join("");
+  if (window.ZERO.applyImages) window.ZERO.applyImages($("#typeGrid"));
 
   $("#garmentColors").innerHTML = GARMENT_COLORS.map((c, i) =>
     `<button class="swatch ${i === 0 ? "sel" : ""}" data-garment="${c[0]}" style="background:${c[0]}" title="${c[1]}"></button>`).join("");
@@ -30,10 +32,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateShirt() {
     const sh = $("#mockShirt");
-    sh.style.background = D.garment;
+    sh.style.backgroundColor = D.garment;
     sh.style.borderRadius = "18px / 8px";
-    sh.setAttribute("data-label", D.type.label + " · " + D.zone.toUpperCase());
     sh.style.boxShadow = "inset 0 -40px 80px rgba(0,0,0,.4), inset 0 20px 60px rgba(255,255,255,.04)";
+    // Real garment mockup photo by convention: assets/images/studio/<type>-<zone>.png
+    // (e.g. tee-front.png). Loads on top of the colour box; falls back gracefully.
+    const src = `assets/images/studio/${D.type.id}-${D.zone}.png`;
+    const probe = new Image();
+    probe.onload = () => {
+      sh.style.backgroundImage = `url("${src}")`;
+      sh.style.backgroundSize = "contain";
+      sh.style.backgroundRepeat = "no-repeat";
+      sh.style.backgroundPosition = "center";
+      sh.setAttribute("data-label", "");
+    };
+    probe.onerror = () => {
+      sh.style.backgroundImage = "";
+      sh.setAttribute("data-label", D.type.label + " · " + D.zone.toUpperCase());
+    };
+    probe.src = src;
   }
 
 
