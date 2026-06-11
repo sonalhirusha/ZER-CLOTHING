@@ -233,32 +233,3 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
   0%   { transform: translate(-5%, -3%); opacity: .55; }
   100% { transform: translate(6%, 4%);  opacity: .95; }
 }
-
-
-/* =====================================================================
-   SVG GARMENT MOCKUPS  (assets/js/mockups.js)
-   Renders crisp vector product renders into empty .ph placeholders so
-   the whole catalog looks shot, not boxed. Real photos still win.
-   ===================================================================== */
-.ph.ph--mock { background-image: none; }
-.ph.ph--mock::after { content: none; }      /* hide the data-label text */
-.ph.ph--mock::before { display: none; }     /* hide the shimmer sweep   */
-.ph.ph--img .zm-holder { display: none; }   /* a real photo overrides the mock */
-
-.zm-holder {
-  position: absolute; inset: 0; z-index: 1;
-  overflow: hidden; border-radius: inherit;
-  animation: zmFade 0.7s var(--ease, cubic-bezier(.16,1,.3,1)) both;
-}
-.zm-svg { width: 100%; height: 100%; display: block; }
-
-/* front → back reveal on product-card hover comes for free:
-   the .ph--alt mock is a BACK view and fades in over the front */
-.product-card:hover .media .ph--alt .zm-holder { transform: scale(1.04); }
-.zm-holder { transition: transform var(--t-slow, .6s) var(--ease, cubic-bezier(.16,1,.3,1)); }
-
-@keyframes zmFade { from { opacity: 0; } to { opacity: 1; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .zm-holder { animation: none; transition: none; }
-}
