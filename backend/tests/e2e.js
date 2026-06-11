@@ -159,6 +159,14 @@ const password = "Sup3rSecret!";
   r = await api("/admin/customers", { adminToken });
   rec("Admin: customers list", r.status === 200 && r.json.some((c) => c.email === email));
 
+  // 20b. Admin: deliver order -> triggers review-request email automation
+  r = await api(`/admin/orders/${orderNumber}/status`, { method: "POST", adminToken, body: { status: "delivered" } });
+  rec("Admin: mark delivered", r.status === 200 && r.json.status === "delivered");
+
+  // 20c. Admin: real-time notifications feed (orders/payments/customers)
+  r = await api("/admin/notifications", { adminToken });
+  rec("Admin: notifications feed populated", r.status === 200 && Array.isArray(r.json.notifications) && r.json.notifications.length > 0, `${r.json.unread} alerts`);
+
   // 21. Email outbox actually processed (wait for worker kick)
   await new Promise((res) => setTimeout(res, 1500));
   const { PrismaClient } = await import("@prisma/client");
@@ -166,6 +174,8 @@ const password = "Sup3rSecret!";
   const sent = await prisma.emailQueue.count({ where: { status: "sent" } });
   const queued = await prisma.emailQueue.count();
   rec("Email: messages sent via outbox", sent > 0, `${sent}/${queued} sent`);
+  const reviewReq = await prisma.emailQueue.count({ where: { template: "review-request" } });
+  rec("Email: review-request auto-triggered on delivery", reviewReq > 0);
   await prisma.$disconnect();
 
   console.log(`\n==== RESULT: ${pass} passed, ${fail} failed ====`);

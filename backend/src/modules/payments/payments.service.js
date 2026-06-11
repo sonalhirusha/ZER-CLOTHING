@@ -40,7 +40,17 @@ export async function payByCard(orderNumber, card, { userId } = {}) {
   if (order.payment.status === "paid") return { ...publicPayment(order.payment, orderNumber), duplicate: true };
 
   const result = validateCard(card);
-  if (!result.ok) throw ApiError.unprocessable("Card validation failed", result.errors);
+  if (!result.ok) {
+    // Record the failed attempt so it surfaces as an admin alert (PAN never stored).
+    await prisma.payment.update({
+      where: { id: order.payment.id },
+      data: {
+        status: "failed",
+        events: { create: { type: "card.failed", rawPayload: toJSON({ errors: result.errors, brand: result.brand }), signatureOk: false } },
+      },
+    }).catch(() => {});
+    throw ApiError.unprocessable("Card validation failed", result.errors);
+  }
 
   // If PayHere is configured this is where you'd tokenize + charge. Without
   // credentials we record an authorized+captured payment from the validated card.

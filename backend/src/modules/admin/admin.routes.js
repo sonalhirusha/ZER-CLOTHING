@@ -30,6 +30,11 @@ router.get("/analytics", async (req, res, next) => {
   try { res.json(await analytics.getSummary({ days: Number(req.query.days) || 30 })); } catch (e) { next(e); }
 });
 
+// Real-time admin notifications feed (new orders, payments, failed payments, customers)
+router.get("/notifications", async (req, res, next) => {
+  try { res.json(await admin.notifications({ since: req.query.since })); } catch (e) { next(e); }
+});
+
 // Orders
 router.get("/orders", async (req, res, next) => {
   try { res.json(await admin.listOrders({ status: req.query.status, q: req.query.q })); } catch (e) { next(e); }

@@ -187,6 +187,23 @@ const TEMPLATES = {
       )}</b>. Depending on your bank it may take 3–7 working days to appear.`,
     }),
   }),
+  "review-request": (p) => ({
+    subject: `How was your order? — ${esc(p.orderNumber)}`,
+    html: layout({
+      heading: "Tell us what you think",
+      intro: `We hope you're loving your ZERØ piece from order <b style="color:#fff">${esc(
+        p.orderNumber
+      )}</b>. A quick review helps other customers and earns you loyalty points.`,
+      bodyHtml: p.items && p.items.length
+        ? `<table role="presentation" width="100%">${p.items
+            .map((i) => `<tr><td style="padding:6px 0;color:#cfcfcf;font-size:14px;border-bottom:1px solid #1c1c1c">${esc(i.name)}</td></tr>`)
+            .join("")}</table>`
+        : "",
+      ctaLabel: "Leave a Review",
+      ctaUrl: `${env.siteUrl}/account.html#orders`,
+      footnote: "Tag @zero_clth7 on Instagram for a chance to be featured.",
+    }),
+  }),
   "ticket-update": (p) => ({
     subject: `Support update — ${esc(p.ticketNumber || p.subject || "your ticket")}`,
     html: layout({

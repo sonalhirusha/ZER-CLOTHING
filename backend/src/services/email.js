@@ -15,6 +15,7 @@ export const EMAIL_TEMPLATES = {
   PRODUCTION_STARTED: "production-started",
   ORDER_SHIPPED: "order-shipped",
   ORDER_DELIVERED: "order-delivered",
+  REVIEW_REQUEST: "review-request",
   REFUND_ISSUED: "refund-issued",
   TICKET_UPDATE: "ticket-update",
   ABANDONED_CART: "abandoned-cart",

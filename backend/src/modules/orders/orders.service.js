@@ -362,6 +362,13 @@ export async function setOrderStatus(orderNumber, toStatus, { actor = "system", 
     }
     await enqueueEmail(order.email, template, payload);
   }
+  // On delivery, automatically trigger a review-request email.
+  if (toStatus === "delivered") {
+    await enqueueEmail(order.email, EMAIL_TEMPLATES.REVIEW_REQUEST, {
+      orderNumber: order.orderNumber,
+      items: (refreshed.items || []).map((i) => ({ name: i.name })),
+    });
+  }
   await notify(order.userId, "order", `Order ${toStatus.replace(/_/g, " ")}`, `Order ${order.orderNumber} is now ${toStatus.replace(/_/g, " ")}.`, `/tracking.html?order=${order.orderNumber}`);
 
   return shapeOrder(refreshed);

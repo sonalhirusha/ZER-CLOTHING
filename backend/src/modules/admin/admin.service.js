@@ -258,3 +258,28 @@ export async function listPayments({ status } = {}) {
     createdAt: p.createdAt,
   }));
 }
+
+// ---- Real-time admin notifications (derived feed — new orders, payments,
+// failed payments, new customers). Polled by the admin dashboard.
+export async function notifications({ since } = {}) {
+  const cutoff = since ? new Date(since) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [orders, payments, customers] = await Promise.all([
+    prisma.order.findMany({ where: { placedAt: { gte: cutoff } }, orderBy: { placedAt: "desc" }, take: 40, select: { orderNumber: true, email: true, totalCents: true, placedAt: true, customerName: true } }),
+    prisma.payment.findMany({ where: { updatedAt: { gte: cutoff } }, orderBy: { updatedAt: "desc" }, take: 40, include: { order: { select: { orderNumber: true } } } }),
+    prisma.user.findMany({ where: { createdAt: { gte: cutoff } }, orderBy: { createdAt: "desc" }, take: 40, select: { email: true, firstName: true, lastName: true, createdAt: true } }),
+  ]);
+
+  const feed = [];
+  for (const o of orders) feed.push({ type: "order", level: "info", title: "New order", body: `${o.orderNumber} · ${money(o.totalCents)} · ${o.customerName || o.email}`, link: o.orderNumber, at: o.placedAt });
+  for (const p of payments) {
+    if (p.status === "paid") feed.push({ type: "payment", level: "success", title: "Payment received", body: `${p.order.orderNumber} · ${money(p.amountCents)}`, link: p.order.orderNumber, at: p.updatedAt });
+    if (p.status === "failed") feed.push({ type: "payment_failed", level: "danger", title: "Failed payment", body: `${p.order.orderNumber} · card declined`, link: p.order.orderNumber, at: p.updatedAt });
+  }
+  for (const c of customers) feed.push({ type: "customer", level: "info", title: "New customer", body: `${[c.firstName, c.lastName].filter(Boolean).join(" ") || c.email}`, at: c.createdAt });
+
+  feed.sort((a, b) => new Date(b.at) - new Date(a.at));
+  const unread = feed.length;
+  return { unread, notifications: feed.slice(0, 50) };
+}
+
+function money(cents) { return "Rs " + Number(Math.round((cents || 0) / 100)).toLocaleString("en-LK"); }
