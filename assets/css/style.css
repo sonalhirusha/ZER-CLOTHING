@@ -803,3 +803,51 @@ main:focus, [tabindex="-1"]:focus { outline: none; }
   .float, .marquee__track, .wa-float::after, .ph--shimmer::before,
   .hero__scroll i::after, .tl-step.active .node::after { animation: none !important; }
 }
+
+
+/* ====================================================================
+   DESIGN / UX POLISH  ·  premium depth + hover micro-interactions
+   (on-brand monochrome — no palette change)
+   ==================================================================== */
+
+/* Product cards: lift with soft depth + brighter frame */
+.product-card { transition: transform var(--t-med) var(--ease); }
+.product-card:hover { transform: translateY(-6px); }
+.product-card .media { transition: transform var(--t-slow) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
+.product-card:hover .media { border-color: var(--line); box-shadow: 0 24px 52px -22px rgba(0,0,0,0.9); }
+.card-title { transition: color var(--t-fast); }
+.product-card:hover .card-title { color: var(--silver-2); }
+
+/* Buttons: tactile lift + soft glow */
+.btn--primary { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease); }
+.btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -12px rgba(255,255,255,0.38); }
+.btn--ghost:hover { transform: translateY(-2px); }
+
+/* Feature cards: depth + animated silver top accent */
+.feature { transition: transform var(--t-med) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
+.feature::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gradient-silver); transform: scaleX(0); transform-origin: left; transition: transform var(--t-med) var(--ease); }
+.feature:hover { box-shadow: 0 22px 48px -24px rgba(0,0,0,0.9); }
+.feature:hover::before { transform: scaleX(1); }
+.feature:hover .ic { border-color: var(--silver); }
+
+/* Review cards: subtle lift */
+.review-card { transition: transform var(--t-med) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
+.review-card:hover { transform: translateY(-5px); border-color: var(--line); box-shadow: 0 22px 48px -24px rgba(0,0,0,0.9); }
+
+/* Category tiles: deeper frame on hover */
+.cat-tile { transition: border-color var(--t-med), box-shadow var(--t-med); }
+.cat-tile:hover { border-color: var(--line); box-shadow: 0 26px 56px -26px rgba(0,0,0,0.9); }
+
+/* Gallery: lift + frame */
+.gallery-item { transition: box-shadow var(--t-med), transform var(--t-med) var(--ease); }
+.gallery-item:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -22px rgba(0,0,0,0.9); }
+
+/* Chips + size buttons: nudge on hover */
+.chip, .size-btn { transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast), transform var(--t-fast); }
+.chip:hover, .size-btn:hover { transform: translateY(-1px); }
+
+/* Thicker, smoother nav underline */
+.nav-links a::after { height: 1.5px; }
+
+/* Inputs: soft focus glow for a more premium feel */
+.field input:focus, .field select:focus, .field textarea:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
