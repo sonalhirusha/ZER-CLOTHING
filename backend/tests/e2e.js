@@ -127,6 +127,17 @@ const password = "Sup3rSecret!";
   r = await api("/analytics/track", { method: "POST", body: { name: "page_view", anonymousId: "anon-1", url: "/" } });
   rec("Analytics: event ingested", r.status === 200 && r.json.ok);
 
+  // 15b. Password reset end-to-end: pull emailed token from the outbox, reset, re-login.
+  const { PrismaClient: PC } = await import("@prisma/client");
+  const db = new PC();
+  const resetJob = await db.emailQueue.findFirst({ where: { template: "password-reset", to: email }, orderBy: { createdAt: "desc" } });
+  const resetTok = resetJob ? JSON.parse(resetJob.payload).token : null;
+  r = await api("/auth/reset-password", { method: "POST", body: { token: resetTok, password: "BrandNew123!" } });
+  rec("Auth: reset-password with emailed token", r.status === 200 && r.json.ok);
+  r = await api("/auth/login", { method: "POST", body: { email, password: "BrandNew123!" } });
+  rec("Auth: login with new password after reset", r.status === 200 && !!r.json.accessToken);
+  await db.$disconnect();
+
   // 16. Admin login
   r = await api("/admin/login", { method: "POST", body: { email: process.env.SEED_ADMIN_EMAIL || "admin@zeroclothing.lk", password: process.env.SEED_ADMIN_PASSWORD || "Admin123!" } });
   rec("Admin: login", r.status === 200 && r.json.token, r.json?.admin?.role);
