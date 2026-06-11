@@ -13,20 +13,45 @@
   window.ZERO = { $, $$, money, store };
 
   /* ---------- API client (graceful static fallback) ----------
-     Set window.ZERO_API_BASE (or ZERO.API_BASE) to your deployed API, e.g.
-     "https://api.zeroclothing.lk/api/v1", to switch from static demo data to the
-     live backend. Empty string (default on GitHub Pages) = pure static mode. */
-  window.ZERO.API_BASE = window.ZERO_API_BASE || "";
+     The API base is resolved in this order:
+       1. window.ZERO_API_BASE (set inline before app.js)
+       2. <meta name="zero-api-base" content="https://api.example.com/api/v1">
+       3. localhost dev → http://localhost:4000/api/v1
+       4. otherwise "" = pure static mode (works on GitHub Pages with demo data) */
+  function detectApiBase() {
+    if (typeof window.ZERO_API_BASE === "string") return window.ZERO_API_BASE;
+    const meta = document.querySelector('meta[name="zero-api-base"]');
+    if (meta && meta.content) return meta.content.trim();
+    const h = location.hostname;
+    if (h === "localhost" || h === "127.0.0.1" || h === "") return "http://localhost:4000/api/v1";
+    return "";
+  }
+  window.ZERO.API_BASE = detectApiBase();
   const online = () => !!window.ZERO.API_BASE;
   window.ZERO.online = online;
 
-  async function apiRequest(path, { method = "GET", body, headers, timeout = 9000 } = {}) {
+  /* ---------- Session / token storage ---------- */
+  const TOKEN_KEY = "zero_access", REFRESH_KEY = "zero_refresh", USER_KEY = "zero_user";
+  const getToken = () => store.get(TOKEN_KEY, null);
+  const setSession = (d) => {
+    if (d && d.accessToken) store.set(TOKEN_KEY, d.accessToken);
+    if (d && d.refreshToken) store.set(REFRESH_KEY, d.refreshToken);
+    if (d && d.user) store.set(USER_KEY, d.user);
+  };
+  const clearSession = () => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY); };
+
+  async function apiRequest(path, { method = "GET", body, headers, timeout = 12000 } = {}) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeout);
+    const token = getToken();
     try {
       const res = await fetch(window.ZERO.API_BASE + path, {
         method,
-        headers: { "Content-Type": "application/json", ...(headers || {}) },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(headers || {})
+        },
         body: body ? JSON.stringify(body) : undefined,
         signal: ctrl.signal
       });
@@ -35,9 +60,60 @@
       return data;
     } finally { clearTimeout(timer); }
   }
+
+  // Auto-refresh the access token once on a 401, then retry.
+  async function authed(path, opts = {}) {
+    try { return await apiRequest(path, opts); }
+    catch (e) {
+      if (e.status === 401 && store.get(REFRESH_KEY, null)) {
+        try { await window.ZERO.auth.refresh(); return await apiRequest(path, opts); }
+        catch { clearSession(); }
+      }
+      throw e;
+    }
+  }
+
+  // Multipart upload (receipts, artwork). Browser sets the multipart boundary.
+  async function upload(path, formData) {
+    const token = getToken();
+    const res = await fetch(window.ZERO.API_BASE + path, {
+      method: "POST",
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error((data.error && data.error.message) || "Upload failed"), { status: res.status, data });
+    return data;
+  }
+
   window.ZERO.api = {
-    get: (p) => apiRequest(p),
-    post: (p, body, headers) => apiRequest(p, { method: "POST", body, headers })
+    get: (p) => authed(p),
+    post: (p, body, headers) => authed(p, { method: "POST", body, headers }),
+    patch: (p, body) => authed(p, { method: "PATCH", body }),
+    del: (p) => authed(p, { method: "DELETE" }),
+    upload
+  };
+
+  window.ZERO.auth = {
+    isLoggedIn: () => !!getToken(),
+    user: () => store.get(USER_KEY, null),
+    getToken, setSession, clearSession,
+    async signup(payload) { const d = await apiRequest("/auth/signup", { method: "POST", body: payload }); setSession(d); return d; },
+    async login(payload) { const d = await apiRequest("/auth/login", { method: "POST", body: payload }); setSession(d); return d; },
+    async logout() {
+      const rt = store.get(REFRESH_KEY, null);
+      try { await apiRequest("/auth/logout", { method: "POST", body: { refreshToken: rt } }); } catch { }
+      clearSession();
+    },
+    async refresh() {
+      const rt = store.get(REFRESH_KEY, null);
+      if (!rt) throw new Error("no refresh token");
+      const d = await apiRequest("/auth/refresh", { method: "POST", body: { refreshToken: rt } });
+      setSession(d); return d;
+    },
+    me: () => apiRequest("/auth/me"),
+    forgot: (email) => apiRequest("/auth/forgot-password", { method: "POST", body: { email } }),
+    reset: (token, password) => apiRequest("/auth/reset-password", { method: "POST", body: { token, password } })
   };
 
   /* ---------- Small helpers ---------- */
@@ -57,7 +133,8 @@
       price: r.price, was: r.was || 0, rating: r.rating || 0, reviews: r.reviews || 0,
       colors: r.colors || [], sizes: r.sizes || [], oos: r.oos || [], tags: r.tags || [],
       badge: r.badge || "", popularity: r.popularity || 0, date: r.date || 0,
-      label: r.label || String(r.name || "").toUpperCase(), img: r.img || "", img2: r.img2 || ""
+      label: r.label || String(r.name || "").toUpperCase(), img: r.img || "", img2: r.img2 || "",
+      variants: r.variants || []
     };
   }
   let _catalogPromise = null;

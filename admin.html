@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Set this to your deployed API base in production, e.g.
+       <meta name="zero-api-base" content="https://api.zeroclothing.lk/api/v1"> -->
+  <title>ZERØ · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body { background: var(--black); }
+    .admin-shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+    .admin-side { border-right: 1px solid var(--line-soft); padding: 24px 18px; position: sticky; top: 0; height: 100vh; }
+    .admin-side .brand { font-size: 1.4rem; display: block; margin-bottom: 24px; }
+    .admin-side a { display: block; padding: 11px 14px; border-radius: 6px; color: var(--gray-400); font-size: .86rem; letter-spacing: .04em; cursor: pointer; }
+    .admin-side a.active, .admin-side a:hover { background: var(--panel-2); color: #fff; }
+    .admin-main { padding: 30px clamp(18px, 4vw, 48px); }
+    .admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 26px; }
+    .admin-card { border: 1px solid var(--line-soft); border-radius: 10px; padding: 20px; background: var(--gradient-dark); }
+    .admin-card .n { font-family: var(--font-display); font-size: 2rem; }
+    .admin-card .l { color: var(--gray-500); font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; margin-top: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    th, td { text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--line-soft); }
+    th { color: var(--gray-500); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; }
+    select, input, textarea { background: var(--panel); border: 1px solid var(--line); color: #fff; padding: 8px 10px; border-radius: 5px; }
+    .pill { padding: 3px 9px; border-radius: 20px; font-size: .68rem; background: var(--panel-2); border: 1px solid var(--line); text-transform: capitalize; }
+    .admin-login { max-width: 380px; margin: 12vh auto; }
+    .admin-login .checkout-card, .admin-card { background: var(--panel); }
+    .row-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    h1.admin-title { font-size: 1.6rem; margin-bottom: 20px; }
+    .muted { color: var(--gray-500); }
+  </style>
+</head>
+<body>
+  <div id="adminRoot"></div>
+  <div class="toast-wrap"></div>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>

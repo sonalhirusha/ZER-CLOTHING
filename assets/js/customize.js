@@ -137,9 +137,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function loadImg(file) {
     if (file.size > 10 * 1024 * 1024) { toast("File too large (max 10MB)"); return; }
+    D.file = file; // keep the original file for artwork upload
     const r = new FileReader();
     r.onload = () => { D.img = r.result; renderDesign(); updatePrice(); toast("Design uploaded"); };
     r.readAsDataURL(file);
+  }
+
+  // Build a compact, server-safe design spec (no giant base64 — artwork is uploaded separately).
+  function designSpec() {
+    return {
+      garmentType: D.type.id, type: D.type.name, garment: D.garment,
+      text: D.text, font: D.font, textColor: D.textColor, textSize: D.textSize,
+      zone: D.zone, placement: D.zone, prints: D.prints,
+      dimensions: { imgScale: D.imgScale, textPos: D.textPos, imgPos: D.imgPos }
+    };
   }
 
   // Add to bag
@@ -149,12 +160,13 @@ document.addEventListener("DOMContentLoaded", function () {
     addToCart({
       id: "custom-" + Date.now(), name: "Custom " + D.type.name, price: D.total,
       label: D.type.label, note: (D.text ? `"${D.text}"` : "Image print") + " · " + (zones.join("/") || "front"),
-      colorName: (GARMENT_COLORS.find(c => c[0] === D.garment) || [])[1]
+      colorName: (GARMENT_COLORS.find(c => c[0] === D.garment) || [])[1],
+      customDesignId: D.savedId || undefined, designSpec: designSpec()
     });
   });
 
-  // Save design
-  $("#saveDesign").addEventListener("click", () => {
+  // Save design (persists server-side + uploads artwork when a backend is connected)
+  $("#saveDesign").addEventListener("click", async () => {
     const design = {
       type: D.type.name, garmentType: D.type.id, garment: D.garment,
       text: D.text, font: D.font, textColor: D.textColor, zone: D.zone,
@@ -163,14 +175,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const saved = store.get("zero_designs", []);
     saved.unshift(design);
     store.set("zero_designs", saved);
-    // When the backend is connected, also persist server-side (artwork upload is
-    // handled separately via a presigned URL — see the architecture doc).
+
     if (window.ZERO.online()) {
-      window.ZERO.api.post("/designs", {
-        garmentType: D.type.id, garmentColor: D.garment,
-        totalCents: Math.round(D.total * 100), spec: design
-      }).catch(() => {});
+      try {
+        const res = await window.ZERO.api.post("/designs", {
+          garmentType: D.type.id, garmentColor: D.garment,
+          totalCents: Math.round(D.total * 100), spec: designSpec()
+        });
+        D.savedId = res.id;
+        if (D.file && res.id) {
+          const fd = new FormData();
+          fd.append("artwork", D.file);
+          fd.append("widthPx", ""); fd.append("heightPx", "");
+          await window.ZERO.api.upload(`/designs/${res.id}/artwork`, fd).catch(() => {});
+        }
+        toast("Design saved to your account");
+        return;
+      } catch (_) { /* fall through to local-only confirmation */ }
     }
-    toast("Design saved to your account");
+    toast("Design saved");
   });
 });
