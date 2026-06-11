@@ -142,11 +142,23 @@
       price: r.price, was: r.was || 0, rating: r.rating || 0, reviews: r.reviews || 0,
       colors: r.colors || [], sizes: r.sizes || [], oos: r.oos || [], tags: r.tags || [],
       badge: r.badge || "", popularity: r.popularity || 0, date: r.date || 0,
-      label: r.label || String(r.name || "").toUpperCase(), img: r.img || "", img2: r.img2 || "",
+      label: r.label || String(r.name || "").toUpperCase(),
+      img: r.img || `assets/images/${r.slug || r.id}-front.jpg`,
+      img2: r.img2 || `assets/images/${r.slug || r.id}-back.jpg`,
       variants: r.variants || []
     };
   }
   let _catalogPromise = null;
+  // Display real photos by convention: assets/images/<id>-front.jpg / -back.jpg.
+  // applyImages() probes each file and silently keeps the styled placeholder if
+  // the image isn't uploaded yet — so this is safe for every product.
+  function withImages(p) {
+    const id = p.id || p.slug;
+    if (id && !p.img) p.img = `assets/images/${id}-front.jpg`;
+    if (id && !p.img2) p.img2 = `assets/images/${id}-back.jpg`;
+    return p;
+  }
+  window.ZERO._products = window.ZERO._products.map(withImages);
   window.ZERO.loadProducts = function () {
     if (_catalogPromise) return _catalogPromise;
     _catalogPromise = (async () => {
