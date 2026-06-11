@@ -1,0 +1,57 @@
+# Render.com blueprint for the ZERØ CLOTHING API (the Node/Express backend).
+# The storefront itself is static and deploys to GitHub Pages; this service
+# powers auth, orders, payments, email, tracking, admin and analytics.
+#
+# Deploy: push this repo, then in Render choose "New > Blueprint" and point it
+# at this file. After the first deploy, set the storefront's API base via a
+# <meta name="zero-api-base" content="https://<your-service>.onrender.com/api/v1">
+# tag (or window.ZERO_API_BASE) so the live site talks to this API.
+services:
+  - type: web
+    name: zero-clothing-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && node prisma/seed.js
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      # Persist the SQLite database + uploaded receipts/artwork across deploys.
+      name: zero-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        value: file:/var/data/prod.db
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: APP_URL
+        sync: false # set to your Render URL, e.g. https://zero-clothing-api.onrender.com
+      - key: SITE_URL
+        sync: false # set to your storefront URL, e.g. https://<user>.github.io/ZER-CLOTHING
+      - key: CORS_ORIGINS
+        sync: false # comma-separated allowed origins (your storefront URL)
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ADMIN_SECRET
+        generateValue: true
+      - key: EMAIL_FROM
+        value: ZERO CLOTHING <orders@zeroclothing.lk>
+      - key: SMTP_HOST
+        sync: false # set to enable real email (e.g. smtp.resend.com / smtp.gmail.com)
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
