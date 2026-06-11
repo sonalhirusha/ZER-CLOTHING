@@ -10,3 +10,5 @@ prisma/*.db
 
 var/
 uploads/
+
+!.env.production.example
