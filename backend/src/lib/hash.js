@@ -1,10 +1,17 @@
-// Password hashing using argon2id.
-import argon2 from "argon2";
+// Password hashing using bcrypt (pure-JS bcryptjs — no native build needed).
+import bcrypt from "bcryptjs";
 
-export function hashPassword(plain) {
-  return argon2.hash(plain, { type: argon2.argon2id });
+const ROUNDS = 12;
+
+export async function hashPassword(plain) {
+  return bcrypt.hash(plain, ROUNDS);
 }
 
-export function verifyPassword(hash, plain) {
-  return argon2.verify(hash, plain);
+export async function verifyPassword(hash, plain) {
+  if (!hash) return false;
+  try {
+    return await bcrypt.compare(plain, hash);
+  } catch {
+    return false;
+  }
 }

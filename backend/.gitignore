@@ -7,3 +7,6 @@ dist/
 .DS_Store
 prisma/*.db
 /generated/
+
+var/
+uploads/

@@ -1,29 +1,41 @@
 // Catalog read API. Shapes products into the exact form the existing ZERØ
-// frontend expects (prices in rupees, colors/sizes/oos arrays), so the static
-// site lights up against the live API with no further mapping.
+// frontend expects (prices in rupees, colors/sizes/oos arrays), and now also
+// exposes a variants[] array (with variantId + stock) so checkout can resolve
+// the exact SKU the customer selected.
 import { prisma } from "../../lib/prisma.js";
+import { fromJSON } from "../../lib/json.js";
 import { ApiError } from "../../middleware/error.js";
 
 const toRupees = (cents) => Math.round((cents || 0) / 100);
 
-// Collapse a product's variants into the frontend's flat shape.
-function shapeProduct(p) {
+export function shapeProduct(p) {
   const colors = [];
   const sizes = [];
-  const sizeAvail = {}; // size -> total available across colors
+  const sizeAvail = {};
+  const variants = [];
 
-  for (const v of p.variants) {
+  for (const v of p.variants || []) {
     if (v.colorHex && !colors.includes(v.colorHex)) colors.push(v.colorHex);
     if (v.size && !sizes.includes(v.size)) sizes.push(v.size);
     const avail = v.inventory ? v.inventory.quantityOnHand - v.inventory.reserved : 0;
     if (v.size) sizeAvail[v.size] = (sizeAvail[v.size] || 0) + Math.max(0, avail);
+    variants.push({
+      variantId: v.id,
+      sku: v.sku,
+      size: v.size,
+      colorHex: v.colorHex,
+      colorName: v.colorName,
+      priceCents: v.priceOverrideCents ?? p.basePriceCents,
+      available: Math.max(0, avail),
+    });
   }
   const oos = sizes.filter((s) => (sizeAvail[s] || 0) <= 0);
 
   return {
-    id: p.slug, // frontend routes by ?id=<slug>
+    id: p.slug,
     slug: p.slug,
     name: p.name,
+    description: p.description || "",
     cat: p.category ? p.category.name : "",
     collection: p.collection || "",
     price: toRupees(p.basePriceCents),
@@ -33,16 +45,17 @@ function shapeProduct(p) {
     colors,
     sizes,
     oos,
-    tags: p.tags || [],
+    tags: fromJSON(p.tags, []),
     badge: p.badge || "",
     popularity: p.popularity || 0,
     label: p.name.toUpperCase(),
     img: "",
     img2: "",
+    variants,
   };
 }
 
-const productInclude = { category: true, variants: { include: { inventory: true } } };
+const productInclude = { category: true, variants: { include: { inventory: true }, orderBy: { position: "asc" } } };
 
 export async function listProducts(query = {}) {
   const where = { status: "active" };

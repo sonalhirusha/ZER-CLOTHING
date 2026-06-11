@@ -110,3 +110,76 @@ must change" in the architecture doc. Point the frontend at
 - Order/payment totals are always recomputed on the server.
 - Webhooks must be signature-verified before changing order state.
 - Secrets live only in `.env` / the platform secret store, never in git.
+
+
+
+---
+
+## Full stack status (June 2026 rebuild)
+
+The API is now a complete commerce backend. It runs out of the box on **SQLite**
+(zero external infra) and is portable to **PostgreSQL** for production (change
+`provider` in `prisma/schema.prisma` and set `DATABASE_URL`).
+
+### Quick start (local)
+
+```bash
+cd backend
+cp .env.example .env          # sensible dev defaults already work
+npm install
+npm run setup                 # prisma generate + migrate deploy + seed
+npm start                     # http://localhost:4000  (GET /health)
+npm run test:e2e              # 27 end-to-end checks (server must be running)
+# or run server + tests in one process:
+node tests/local.js
+```
+
+Seed creates the 12-product catalog (91 variants + inventory), two coupons
+(`ZERO10`, `FREESHIP`) and an admin (`admin@zeroclothing.lk` / `Admin123!`).
+
+### Endpoints
+
+| Area | Routes |
+|---|---|
+| Auth | `POST /auth/signup`, `/auth/login`, `/auth/logout`, `/auth/refresh`, `GET/POST /auth/verify-email`, `/auth/resend-verification`, `/auth/forgot-password`, `/auth/reset-password`, `GET /auth/me` |
+| Catalog | `GET /products`, `/products/:slug`, `/categories`, `/products/:slug/reviews` |
+| Account | `GET /account/overview`, `PATCH /account/profile`, `POST /account/change-password`, addresses CRUD, wishlist CRUD, notifications |
+| Orders | `POST /checkout/quote`, `POST /orders`, `GET /orders`, `GET /orders/:n`, `GET /orders/:n/tracking` |
+| Payments | `POST /payments/card`, `POST /payments/:n/receipt` (upload), `GET /payments/:n`, `POST /payments/payhere/notify` |
+| Designs | `POST /designs`, `POST /designs/:id/artwork` (upload), `GET /designs`, `GET /designs/:id`, `POST /designs/:id/reorder` |
+| Support | `POST /contact`, `POST /newsletter` |
+| Analytics | `POST /analytics/track` |
+| Admin | `POST /admin/login`, `GET /admin/analytics`, orders + status + shipment, payments verify/refund, customers, products CRUD, inventory, support tickets |
+
+### Email
+
+Emails are queued in `EmailQueue` and sent by an in-process worker with retries.
+With no `SMTP_HOST`, emails are written as `.eml` previews to `backend/var/mail`
+(so you can see every message). Set SMTP env vars to send for real. Templates:
+verify-email, welcome, password-reset, security-alert, order-confirmation,
+payment-confirmed, production-started, order-shipped, order-delivered,
+refund-issued, ticket-update, abandoned-cart.
+
+### Connecting the storefront
+
+The static site auto-detects the API base:
+1. `window.ZERO_API_BASE` if set, else
+2. `<meta name="zero-api-base" content="https://api.example.com/api/v1">`, else
+3. `http://localhost:4000/api/v1` on localhost, else static demo mode.
+
+To make the deployed GitHub Pages site use the live API, add the meta tag to the
+`<head>` of each page pointing at your deployed API URL.
+
+### Production env checklist
+
+- `NODE_ENV=production`
+- `DATABASE_URL` (SQLite file path on a persistent disk, or a Postgres URL)
+- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ADMIN_SECRET` (long random)
+- `APP_URL`, `SITE_URL`, `CORS_ORIGINS`
+- `UPLOAD_DIR` (persistent path)
+- `SMTP_HOST/PORT/USER/PASS` + `EMAIL_FROM` (to send real email)
+- `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`
+- Optional: `PAYHERE_MERCHANT_ID`, `PAYHERE_MERCHANT_SECRET`
+
+A `render.yaml` blueprint at the repo root deploys this service with a
+persistent disk for the database + uploads.

@@ -15,11 +15,25 @@ export function verifyAccessToken(token) {
   return jwt.verify(token, env.jwt.accessSecret);
 }
 
+export function signAdminToken(admin) {
+  return jwt.sign(
+    { sub: admin.id, email: admin.email, role: admin.role, adm: true },
+    env.jwt.adminSecret,
+    { expiresIn: "8h" }
+  );
+}
+
+export function verifyAdminToken(token) {
+  return jwt.verify(token, env.jwt.adminSecret);
+}
+
 // Opaque refresh token (random), returned to client; only its hash is stored.
-export function generateRefreshToken() {
+// "remember" sessions last refreshTtlDays; non-remember sessions last 1 day.
+export function generateRefreshToken(remember = false) {
   const raw = crypto.randomBytes(48).toString("base64url");
   const hash = hashToken(raw);
-  const expiresAt = new Date(Date.now() + env.jwt.refreshTtlDays * 24 * 60 * 60 * 1000);
+  const days = remember ? env.jwt.refreshTtlDays : 1;
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
   return { raw, hash, expiresAt };
 }
 

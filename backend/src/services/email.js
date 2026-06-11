@@ -1,9 +1,10 @@
-// Transactional email via an outbox table (email_queue). A separate worker
-// (jobs/emailWorker.js) renders templates and sends through the provider, with
-// retries/backoff. Here we only ENQUEUE — controllers never send inline.
+// Transactional email via an outbox table (EmailQueue). Controllers only
+// ENQUEUE here; the worker (jobs/emailWorker.js) renders + sends with retries.
+// Enqueuing also kicks the worker so emails go out immediately in dev/prod.
 import { prisma } from "../lib/prisma.js";
+import { toJSON } from "../lib/json.js";
+import { kick } from "../jobs/emailWorker.js";
 
-// Known templates -> see docs/ECOMMERCE-ARCHITECTURE.md §7
 export const EMAIL_TEMPLATES = {
   VERIFY_EMAIL: "verify-email",
   WELCOME: "welcome",
@@ -20,7 +21,9 @@ export const EMAIL_TEMPLATES = {
 };
 
 export async function enqueueEmail(to, template, payload = {}, scheduledAt = new Date()) {
-  return prisma.emailQueue.create({
-    data: { to, template, payload, scheduledAt },
+  const row = await prisma.emailQueue.create({
+    data: { to, template, payload: toJSON(payload) || "{}", scheduledAt },
   });
+  kick();
+  return row;
 }

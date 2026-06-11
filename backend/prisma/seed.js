@@ -2,7 +2,7 @@
 // reviews. Mirrors assets/js/data.js so the API serves the same products the
 // static site shows. Run: npm run seed
 import { PrismaClient } from "@prisma/client";
-import argon2 from "argon2";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -49,7 +49,18 @@ async function main() {
   for (const p of PRODUCTS) {
     const product = await prisma.product.upsert({
       where: { slug: p.id },
-      update: {},
+      update: {
+        name: p.name,
+        basePriceCents: p.price * 100,
+        compareAtCents: p.was ? p.was * 100 : null,
+        badge: p.badge || null,
+        tags: JSON.stringify(p.tags || []),
+        collection: p.collection || null,
+        ratingAvg: p.rating || 0,
+        ratingCount: p.reviews || 0,
+        popularity: p.popularity || 0,
+        categoryId: catByName[p.cat],
+      },
       create: {
         slug: p.id,
         name: p.name,
@@ -60,7 +71,7 @@ async function main() {
         currency: "LKR",
         status: "active",
         badge: p.badge || null,
-        tags: p.tags || [],
+        tags: JSON.stringify(p.tags || []),
         collection: p.collection || null,
         ratingAvg: p.rating || 0,
         ratingCount: p.reviews || 0,
@@ -109,11 +120,16 @@ async function main() {
 
   // Admin user
   const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@zeroclothing.lk";
-  const adminPass = process.env.SEED_ADMIN_PASSWORD || "ChangeMe123!";
+  const adminPass = process.env.SEED_ADMIN_PASSWORD || "Admin123!";
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
     update: {},
-    create: { email: adminEmail, passwordHash: await argon2.hash(adminPass, { type: argon2.argon2id }), role: "super_admin" },
+    create: {
+      email: adminEmail,
+      name: "ZERØ Admin",
+      passwordHash: await bcrypt.hash(adminPass, 12),
+      role: "super_admin",
+    },
   });
 
   // A couple of published reviews on the hero product
@@ -130,7 +146,7 @@ async function main() {
     }
   }
 
-  console.log(`Seeded ${PRODUCTS.length} products, 2 coupons, admin (${adminEmail}).`);
+  console.log(`Seeded ${PRODUCTS.length} products, 2 coupons, admin (${adminEmail} / ${adminPass}).`);
 }
 
 main()
