@@ -753,3 +753,53 @@ img.real-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .design-img { transition: width 0.12s linear; }
 .print-zone .drag-hint { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.4); pointer-events: none; }
 .studio-range-label { display: flex; justify-content: space-between; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 8px; }
+
+
+/* ====================================================================
+   ACCESSIBILITY ENHANCEMENTS  ·  guided by UI/UX Pro Max UX guidelines
+   (visible focus, skip link, keyboard nav, contrast, reduced motion)
+   ==================================================================== */
+
+/* --- Visible keyboard focus (High: never remove focus without a replacement) --- */
+:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 3px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Form fields keep their border treatment + gain a clear ring for keyboard users */
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.newsletter input:focus-visible,
+.coupon-row input:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+/* Skip-link target shouldn't draw a full-page outline when focused programmatically */
+main:focus, [tabindex="-1"]:focus { outline: none; }
+
+/* --- Skip to content link (Medium: nav-heavy pages) --- */
+.skip-link {
+  position: fixed; top: 12px; left: 50%;
+  transform: translate(-50%, -220%);
+  z-index: calc(var(--z-loader) + 10);
+  background: var(--white); color: var(--black);
+  padding: 12px 24px; border-radius: 3px;
+  font-family: var(--font-body); font-size: 0.74rem; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  transition: transform var(--t-fast) var(--ease);
+}
+.skip-link:focus { transform: translate(-50%, 0); outline: 2px solid var(--black); outline-offset: 2px; }
+
+/* --- Lift low-contrast footer meta text toward WCAG AA --- */
+.footer-bottom { color: var(--gray-400); }
+
+/* --- Reduced motion: also stop looping / scroll-jacking effects --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-iteration-count: 1 !important; }
+  html { scroll-behavior: auto !important; }
+  .float, .marquee__track, .wa-float::after, .ph--shimmer::before,
+  .hero__scroll i::after, .tl-step.active .node::after { animation: none !important; }
+}

@@ -61,8 +61,8 @@
         <button class="icon-btn" aria-label="Search" data-search>${ICON.search}</button>
         <a class="icon-btn" href="account.html" aria-label="Account">${ICON.user}</a>
         <a class="icon-btn" href="account.html#wishlist" aria-label="Wishlist">${ICON.heart}<span class="badge" data-wish-badge style="display:none">0</span></a>
-        <button class="icon-btn" aria-label="Cart" data-cart-open>${ICON.bag}<span class="badge" data-cart-badge style="display:none">0</span></button>
-        <button class="burger" aria-label="Menu" data-burger><span></span><span></span><span></span></button>
+        <button class="icon-btn" aria-label="Cart" data-cart-open aria-controls="cartDrawer" aria-expanded="false">${ICON.bag}<span class="badge" data-cart-badge style="display:none">0</span></button>
+        <button class="burger" aria-label="Menu" data-burger aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button>
       </div>
     </nav></div></header>
     <div class="mobile-nav" id="mobileNav">
@@ -132,7 +132,7 @@
   function drawerHTML() {
     return `
     <div class="overlay" data-overlay></div>
-    <aside class="drawer" id="cartDrawer" aria-label="Cart">
+    <aside class="drawer" id="cartDrawer" aria-label="Cart" aria-hidden="true">
       <div class="drawer-head"><h3>Your Bag</h3><button class="icon-btn" data-cart-close>${ICON.close}</button></div>
       <div class="drawer-body" data-cart-body></div>
       <div class="drawer-foot" data-cart-foot></div>
@@ -246,9 +246,38 @@
   window.ZERO.getWishlist = () => wishlist;
 
   /* ---------- Drawer open/close ---------- */
-  function openCart() { $(".overlay")?.classList.add("open"); $("#cartDrawer")?.classList.add("open"); document.body.classList.add("no-scroll"); }
-  function closeCart() { $(".overlay")?.classList.remove("open"); $("#cartDrawer")?.classList.remove("open"); document.body.classList.remove("no-scroll"); }
+  let lastFocused = null;
+  function openCart() {
+    lastFocused = document.activeElement;
+    $(".overlay")?.classList.add("open");
+    $("#cartDrawer")?.classList.add("open");
+    $("#cartDrawer")?.setAttribute("aria-hidden", "false");
+    $("[data-cart-open]")?.setAttribute("aria-expanded", "true");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => $("[data-cart-close]")?.focus(), 60);
+  }
+  function closeCart() {
+    $(".overlay")?.classList.remove("open");
+    $("#cartDrawer")?.classList.remove("open");
+    $("#cartDrawer")?.setAttribute("aria-hidden", "true");
+    $("[data-cart-open]")?.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("no-scroll");
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
   window.ZERO.openCart = openCart;
+
+  /* ---------- Mobile nav open/close ---------- */
+  function setMobileNav(open) {
+    const burger = $("[data-burger]"), nav = $("#mobileNav");
+    if (!nav) return;
+    burger?.classList.toggle("open", open);
+    nav.classList.toggle("open", open);
+    document.body.classList.toggle("no-scroll", open);
+    burger?.setAttribute("aria-expanded", String(open));
+    if (open) setTimeout(() => nav.querySelector("a")?.focus?.(), 60);
+    else burger?.focus?.();
+  }
+  window.ZERO.setMobileNav = setMobileNav;
 
   /* ---------- Scroll reveal ---------- */
   function initReveal() {
@@ -269,6 +298,28 @@
     setTimeout(() => l.classList.add("done"), 2600);
   }
 
+  /* ---------- Accessibility: skip link + keyboard support ---------- */
+  function initA11y() {
+    const main = document.querySelector("main");
+    if (main) {
+      if (!main.id) main.id = "main";
+      main.setAttribute("tabindex", "-1");
+      if (!document.querySelector(".skip-link")) {
+        const skip = document.createElement("a");
+        skip.className = "skip-link";
+        skip.href = "#" + main.id;
+        skip.textContent = "Skip to content";
+        document.body.insertBefore(skip, document.body.firstChild);
+      }
+    }
+    // Close overlays with the Escape key (keyboard navigation)
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if ($("#cartDrawer")?.classList.contains("open")) closeCart();
+      else if ($("#mobileNav")?.classList.contains("open")) setMobileNav(false);
+    });
+  }
+
 
   /* ---------- Global event delegation ---------- */
   function bindEvents() {
@@ -277,7 +328,7 @@
       if (t.closest("[data-cart-open]")) { openCart(); }
       if (t.closest("[data-cart-close]") || t.closest("[data-overlay]")) { closeCart(); }
       const burger = t.closest("[data-burger]");
-      if (burger) { burger.classList.toggle("open"); $("#mobileNav")?.classList.toggle("open"); document.body.classList.toggle("no-scroll"); }
+      if (burger) { setMobileNav(!$("#mobileNav")?.classList.contains("open")); }
       const fav = t.closest("[data-fav]");
       if (fav) { e.preventDefault(); toggleWish(fav.getAttribute("data-fav")); }
       const qa = t.closest("[data-quickadd]");
@@ -315,6 +366,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     initLoader();
     if (window.ZERO_PAGE !== undefined) window.ZERO.mount(window.ZERO_PAGE);
-    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document);
+    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y();
   });
 })();
