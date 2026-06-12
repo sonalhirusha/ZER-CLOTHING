@@ -5,421 +5,76 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#000000" />
-    <title>VANGUARD — World-Class Digital Collective</title>
-    <meta name="description" content="VANGUARD — a world-class digital collective. We build fierce brand identities that lead." />
-
-    <!-- Brand display font: FSP DEMO - PODIUM Sharp 4.11 -->
-    <link rel="stylesheet" href="https://db.onlinewebfonts.com/c/8b75d9dcff6a48c35a46656192adf019?family=FSP+DEMO+-+PODIUM+Sharp+4.11" />
-    <!-- Body font: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>ZERØ CLOTHING</title>
 
     <style>
-      :root {
-        --podium: "FSP DEMO - PODIUM Sharp 4.11", "Inter", system-ui, sans-serif;
-        --inter: "Inter", system-ui, -apple-system, sans-serif;
-      }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { height: 100%; }
-      body {
-        background: #000;
-        color: #fff;
-        font-family: var(--inter);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        overflow-x: hidden;
-      }
-      a { text-decoration: none; color: inherit; }
+      html, body { height: 100%; background: #000; overflow: hidden; }
 
-      /* ---------- Hero shell ---------- */
-      .hero {
+      .splash {
         position: relative;
+        display: block;
         width: 100%;
         height: 100vh;
         height: 100svh;
-        min-height: 600px;
+        background: #000 url("assets/vanguard-poster.jpg") center / cover no-repeat;
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        /* poster image fallback so something always shows */
-        background: #050505 url("assets/vanguard-poster.jpg") center/cover no-repeat;
+        cursor: pointer;
       }
-      .hero__video {
+
+      /* The looping background video, fades + scales in, then slowly zooms */
+      .splash__video {
         position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
-        z-index: 0;
+        opacity: 0;
+        transform: scale(1.08);
+        animation:
+          fade-in 1.4s ease-out forwards,
+          ken-burns 24s ease-in-out 1.4s infinite alternate;
       }
-      .hero__overlay {
+
+      /* Subtle depth overlay, also fades in */
+      .splash__overlay {
         position: absolute;
         inset: 0;
-        z-index: 1;
+        opacity: 0;
         background:
-          linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 35%, rgba(0,0,0,.55) 100%);
-      }
-      .hero__content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
-
-      /* ---------- Navbar ---------- */
-      .nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px;
-      }
-      .brand {
-        font-family: var(--podium);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        font-size: 1.5rem;
-        color: #fff;
-      }
-      .nav__links { display: none; align-items: center; gap: 40px; }
-      .nav__links a {
-        font-family: var(--inter);
-        font-size: .875rem;
-        text-transform: uppercase;
-        letter-spacing: .18em;
-        color: rgba(255,255,255,.8);
-        transition: color .25s ease;
-      }
-      .nav__links a:hover { color: #fff; }
-
-      .btn-touch {
-        display: none;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid rgba(255,255,255,.3);
-        padding: 12px 24px;
-        font-size: .75rem;
-        text-transform: uppercase;
-        letter-spacing: .18em;
-        color: #fff;
-        transition: border-color .25s ease, background-color .25s ease;
-      }
-      .btn-touch:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.1); }
-
-      .hamburger {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        background: none;
-        border: 0;
-        cursor: pointer;
-        padding: 4px;
-      }
-      .hamburger span { height: 2px; background: #fff; display: block; }
-      .hamburger span:nth-child(1) { width: 24px; }
-      .hamburger span:nth-child(2) { width: 24px; }
-      .hamburger span:nth-child(3) { width: 16px; }
-
-      /* ---------- Hero body ---------- */
-      .hero__body {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        padding: 24px 24px 40px;
-      }
-      .hero__inner { max-width: 760px; width: 100%; }
-
-      .tagline {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 24px;
-        color: rgba(255,255,255,.7);
-      }
-      .tagline span {
-        font-size: .72rem;
-        letter-spacing: .3em;
-        text-transform: uppercase;
-      }
-      .icon { display: inline-block; vertical-align: middle; flex: none; }
-
-      h1.headline {
-        font-family: var(--podium);
-        text-transform: uppercase;
-        line-height: .92;
-        letter-spacing: -.01em;
-        color: #fff;
-      }
-      h1.headline span { display: block; font-size: clamp(2.8rem, 8vw, 7rem); }
-
-      .subtext {
-        margin-top: 24px;
-        max-width: 28rem;
-        font-size: .9rem;
-        line-height: 1.65;
-        color: rgba(255,255,255,.7);
-      }
-      .subtext b { color: #fff; font-weight: 700; }
-
-      .cta-row {
-        margin-top: 32px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-      }
-      .btn-work {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: #000;
-        color: #fff;
-        border: 0;
-        cursor: pointer;
-        padding: 14px 20px;
-        font-family: var(--inter);
-        font-size: .69rem;
-        letter-spacing: .18em;
-        text-transform: uppercase;
-        transition: background-color .25s ease;
-      }
-      .btn-work:hover { background: #171717; }
-      .btn-work .icon { transition: transform .25s ease; }
-      .btn-work:hover .icon { transform: translate(2px, -2px); }
-
-      .badge { display: none; align-items: center; gap: 12px; }
-      .badge .icon { color: rgba(255,255,255,.5); }
-      .badge div {
-        color: rgba(255,255,255,.6);
-        font-size: .72rem;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        line-height: 1.25;
+          radial-gradient(120% 120% at 50% 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);
+        animation: fade-in 2s ease-out 0.3s forwards;
+        pointer-events: none;
       }
 
-      .stats {
-        margin-top: 32px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 24px;
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
       }
-      .stat .val {
-        font-family: var(--inter);
-        font-weight: 700;
-        letter-spacing: -.01em;
-        font-size: 1.5rem;
-        color: #fff;
+      @keyframes scale-in {
+        from { opacity: 0; transform: scale(0.9); }
+        to   { opacity: 1; transform: scale(1); }
       }
-      .stat .lbl {
-        margin-top: 4px;
-        color: rgba(255,255,255,.5);
-        font-size: .56rem;
-        letter-spacing: .18em;
-        text-transform: uppercase;
+      @keyframes ken-burns {
+        from { transform: scale(1.08); }
+        to   { transform: scale(1.18); }
       }
-
-      /* ---------- Mobile menu ---------- */
-      .mobile-menu {
-        position: fixed;
-        inset: 0;
-        z-index: 50;
-        background: rgba(0,0,0,.95);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity .5s ease, visibility .5s ease;
-      }
-      .mobile-menu.open { opacity: 1; visibility: visible; }
-      .mobile-menu__head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px;
-      }
-      .mobile-menu__close { background: none; border: 0; color: #fff; cursor: pointer; padding: 4px; }
-      .mobile-menu__list {
-        height: calc(100% - 72px);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 24px;
-      }
-      .mobile-menu__list a.m-link {
-        font-family: var(--podium);
-        font-size: 2.25rem;
-        text-transform: uppercase;
-        color: #fff;
-      }
-      .mobile-menu .stagger {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: opacity .5s ease, transform .5s ease;
-      }
-      .mobile-menu.open .stagger { opacity: 1; transform: translateY(0); }
-      .mobile-menu.open .stagger:nth-child(1) { transition-delay: .10s; }
-      .mobile-menu.open .stagger:nth-child(2) { transition-delay: .18s; }
-      .mobile-menu.open .stagger:nth-child(3) { transition-delay: .26s; }
-      .mobile-menu.open .stagger:nth-child(4) { transition-delay: .34s; }
-      .mobile-menu.open .stagger:nth-child(5) { transition-delay: .42s; }
-      .m-touch {
-        margin-top: 16px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid rgba(255,255,255,.3);
-        padding: 12px 24px;
-        font-size: .75rem;
-        text-transform: uppercase;
-        letter-spacing: .18em;
-        color: #fff;
-      }
-
-      /* ---------- Entrance animations ---------- */
-      @keyframes fade-up {
-        from { opacity: 0; transform: translateY(30px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .fade-up { opacity: 0; animation: fade-up .8s ease-out forwards; }
-      .d1 { animation-delay: .2s; }
-      .d2 { animation-delay: .4s; }
-      .d3 { animation-delay: .6s; }
-      .d4 { animation-delay: .8s; }
 
       @media (prefers-reduced-motion: reduce) {
-        .fade-up { animation: none; opacity: 1; }
-        .mobile-menu .stagger { transition: none; }
-      }
-
-      /* ---------- Responsive ---------- */
-      @media (min-width: 640px) {
-        .brand { font-size: 1.875rem; }
-        .tagline span { font-size: .875rem; }
-        .subtext { font-size: 1rem; }
-        .btn-work { padding: 16px 28px; font-size: .75rem; }
-        .badge { display: flex; }
-        .stats { gap: 48px; margin-top: 40px; }
-        .stat .val { font-size: 2.25rem; }
-        .stat .lbl { font-size: .72rem; }
-        .mobile-menu__list a.m-link { font-size: 3rem; }
-      }
-      @media (min-width: 768px) {
-        .nav__links { display: flex; }
-        .btn-touch { display: inline-flex; }
-        .hamburger { display: none; }
-      }
-      @media (min-width: 1024px) {
-        .nav { padding: 28px 64px; }
-        .hero__body { padding: 28px 64px 56px; }
-        .tagline { margin-bottom: 32px; }
-        .subtext { margin-top: 32px; }
-        .cta-row { margin-top: 40px; }
-        .stats { gap: 64px; margin-top: 56px; }
-        .stat .val { font-size: 3rem; }
-      }
-      @media (min-width: 640px) and (max-width: 1023px) {
-        .nav { padding: 20px 40px; }
-        .hero__body { padding: 24px 40px 40px; }
+        .splash__video { animation: fade-in 0.6s ease-out forwards; transform: none; }
+        .splash__overlay { animation: fade-in 0.6s ease-out forwards; }
       }
     </style>
   </head>
 
   <body>
-    <main class="hero" id="main">
-      <!-- Background video with poster-image fallback -->
-      <video class="hero__video" autoplay muted loop playsinline preload="auto"
+    <!-- Main page: only the image + video + animation. Tap to enter the store. -->
+    <a class="splash" href="store.html" aria-label="Enter ZERØ Clothing">
+      <video class="splash__video" autoplay muted loop playsinline preload="auto"
              poster="assets/vanguard-poster.jpg">
         <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260606_154941_df1a96e1-a06f-450c-bd02-d863414cc1a0.mp4" type="video/mp4" />
       </video>
-      <div class="hero__overlay"></div>
-
-      <div class="hero__content">
-        <!-- Navbar -->
-        <nav class="nav">
-          <a href="#main" class="brand">VANGUARD</a>
-          <div class="nav__links">
-            <a href="#main">Projects</a>
-            <a href="#main">Studio</a>
-            <a href="#main">Offerings</a>
-            <a href="#main">Inquire</a>
-          </div>
-          <a href="#main" class="btn-touch">
-            Get in touch
-            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-          </a>
-          <button class="hamburger" id="openMenu" aria-label="Open menu">
-            <span></span><span></span><span></span>
-          </button>
-        </nav>
-
-        <!-- Hero body -->
-        <div class="hero__body">
-          <div class="hero__inner">
-            <div class="tagline fade-up">
-              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>
-              <span>World-Class Digital Collective</span>
-            </div>
-
-            <h1 class="headline fade-up d1">
-              <span>Design.</span>
-              <span>Disrupt.</span>
-              <span>Conquer.</span>
-            </h1>
-
-            <p class="subtext fade-up d2">
-              We build fierce brand identities<br />
-              that don't just turn heads &mdash; <b>they lead.</b>
-            </p>
-
-            <div class="cta-row fade-up d3">
-              <button class="btn-work" type="button">
-                See Our Work
-                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-              </button>
-              <div class="badge">
-                <svg class="icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-                <div>Top-Rated<br />Brand Studio</div>
-              </div>
-            </div>
-
-            <div class="stats fade-up d4">
-              <div class="stat"><div class="val">250+</div><div class="lbl">Brands Transformed</div></div>
-              <div class="stat"><div class="val">95%</div><div class="lbl">Client Retention</div></div>
-              <div class="stat"><div class="val">10+</div><div class="lbl">Years in the Game</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- Mobile menu overlay -->
-    <div class="mobile-menu" id="mobileMenu">
-      <div class="mobile-menu__head">
-        <span class="brand">VANGUARD</span>
-        <button class="mobile-menu__close" id="closeMenu" aria-label="Close menu">
-          <svg class="icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-      </div>
-      <div class="mobile-menu__list">
-        <a href="#main" class="m-link stagger">Projects</a>
-        <a href="#main" class="m-link stagger">Studio</a>
-        <a href="#main" class="m-link stagger">Offerings</a>
-        <a href="#main" class="m-link stagger">Inquire</a>
-        <a href="#main" class="m-touch stagger">
-          Get in touch
-          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <script>
-      (function () {
-        var menu = document.getElementById('mobileMenu');
-        var open = document.getElementById('openMenu');
-        var close = document.getElementById('closeMenu');
-        if (open) open.addEventListener('click', function () { menu.classList.add('open'); });
-        if (close) close.addEventListener('click', function () { menu.classList.remove('open'); });
-        menu.querySelectorAll('a').forEach(function (a) {
-          a.addEventListener('click', function () { menu.classList.remove('open'); });
-        });
-      })();
-    </script>
+      <div class="splash__overlay"></div>
+    </a>
   </body>
 </html>
