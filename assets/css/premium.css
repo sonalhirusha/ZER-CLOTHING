@@ -369,3 +369,37 @@ input::placeholder, textarea::placeholder { color: var(--gray-500, #7d7d7d); }
 /* prevent layout shift / smoother images */
 img { content-visibility: auto; }
 /* honour data-saver / reduced motion already covered above */
+
+
+/* =====================================================================
+   CALM PREMIUM OVERRIDES  (remove flashy top animation & gimmicks)
+   The animated background, cursor glow, grain, magnetic & 3D tilt are
+   disabled in premium.js; these rules neutralise their styling and
+   restore clean, elegant hover states fit for a luxury clothing site.
+   ===================================================================== */
+
+/* kill the film-grain overlay */
+body::after { display: none !important; }
+
+/* no animated field — keep a clean, deep, static backdrop */
+#zx-webgl { display: none !important; }
+body, body.zx-bg-fallback { background: #050506 !important; }
+
+/* the 3D glare element never renders now, but ensure it's invisible */
+.zx-glare, .zx-cursor { display: none !important; }
+.zx-tilt { transform: none !important; }
+
+/* refined, restrained hover — a soft lift instead of tilt */
+.product-card { transition: transform .5s var(--zx-ease), box-shadow .5s var(--zx-ease), border-color .5s var(--zx-ease); }
+.product-card:hover { transform: translateY(-6px); border-color: var(--zx-hair-bright); box-shadow: 0 28px 64px rgba(0,0,0,.55); }
+.cat-tile { transition: transform .5s var(--zx-ease), border-color .5s var(--zx-ease), box-shadow .5s var(--zx-ease); }
+.cat-tile:hover { transform: translateY(-4px); border-color: var(--zx-hair-bright); }
+
+/* footer design credit */
+.footer-credit { font-size: .72rem; letter-spacing: .06em; color: var(--gray-500, #7d7d7d); }
+.footer-credit b { color: #d6d6da; font-weight: 600; letter-spacing: .14em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card, .cat-tile { transition: none; }
+  .product-card:hover, .cat-tile:hover { transform: none; }
+}

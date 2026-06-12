@@ -288,7 +288,7 @@
           </ul></div>
         </div>
         <div class="footer-bottom">
-          <span>© ${new Date().getFullYear()} ZERØ CLOTHING · Colombo, Sri Lanka</span>
+          <span>© ${new Date().getFullYear()} ZERØ CLOTHING · Colombo, Sri Lanka · <span class="footer-credit">Designed by <b>ZEROC7™</b></span></span>
           <div class="pay-icons"><span>VISA</span><span>MASTERCARD</span><span>EZ CASH</span><span>BANK</span><span>COD</span></div>
         </div>
       </div>

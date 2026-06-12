@@ -250,10 +250,10 @@
      BOOT + observe dynamically-injected nodes
      ================================================================= */
   function boot() {
-    try { initBackground(); } catch (e) {}
-    scanTilt(document);
-    scanMagnet(document);
-    try { initCursor(); } catch (e) {}
+    // DESIGN DIRECTION: a premium clothing site reads calm & clean.
+    // The animated WebGL background, cursor glow, film grain, magnetic buttons
+    // and 3D card tilt have been intentionally disabled (lighter + more elegant).
+    // Only subtle, professional scroll fade-ins are kept.
     var revScan = null;
     try { revScan = initReveal(); } catch (e) {}
 
@@ -265,8 +265,6 @@
             var n = added[j];
             if (n.nodeType !== 1) continue;
             var scope = n.parentNode || document;
-            scanTilt(scope);
-            scanMagnet(scope);
             if (revScan) revScan(scope);
           }
         }
