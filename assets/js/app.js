@@ -217,7 +217,7 @@
       ${Array(2).fill('<span>FREE ISLANDWIDE DELIVERY OVER RS 15,000&nbsp;&nbsp;·&nbsp;&nbsp;DESIGNED BY YOU&nbsp;&nbsp;·&nbsp;&nbsp;NEW ACID WASH DROP LIVE&nbsp;&nbsp;·&nbsp;&nbsp;CUSTOM PRINTS FROM RS 3,900&nbsp;&nbsp;·&nbsp;&nbsp;</span>').join("")}
     </div></div></div>
     <header class="site-header" id="siteHeader"><div class="container"><nav class="nav">
-      <a href="index.html" class="brand">ZER<b>Ø</b></a>
+      <a href="store.html" class="brand">ZER<b>Ø</b></a>
       <div class="nav-links">
         ${link("shop.html","Shop","shop")}
         ${link("acid-wash.html","Acid Wash","acid")}
@@ -259,7 +259,7 @@
         </div>
         <div class="footer-grid">
           <div class="footer-brand">
-            <a href="index.html" class="brand">ZER<b>Ø</b></a>
+            <a href="store.html" class="brand">ZER<b>Ø</b></a>
             <p>Premium custom streetwear made in Sri Lanka. Acid wash, oversized fits & couple collections — built for self expression.</p>
             <div class="newsletter">
               <input type="email" placeholder="Email for 10% off first order" aria-label="Email">
