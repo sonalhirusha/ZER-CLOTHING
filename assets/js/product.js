@@ -1,15 +1,16 @@
 /* ZERØ — Product detail page */
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const { $, $$, money, productCard, getProduct, addToCart, initReveal, toast } = window.ZERO;
+  const PRODUCTS = await window.ZERO.loadProducts();
   const id = new URLSearchParams(location.search).get("id");
   const p = getProduct(id) || PRODUCTS[0];
   document.title = p.name + " — ZERØ CLOTHING";
 
-  const sel = { size: null, color: p.colors[0], colorName: "Black", qty: 1 };
-  const star = '<svg viewBox="0 0 24 24" fill="var(--silver)"><path d="M12 2l3 6.5 7 .9-5 4.8 1.3 7L12 18l-6.3 3.2L7 14.2 2 9.4l7-.9z"/></svg>';
   const colorName = (hex) => ({ "#0a0a0a": "Black", "#f5f5f5": "Bone", "#7d7d7d": "Ash", "#3a3a3a": "Charcoal" }[hex] || "Black");
+  const sel = { size: null, color: p.colors[0], colorName: colorName(p.colors[0]), qty: 1 };
+  const star = '<svg viewBox="0 0 24 24" fill="var(--silver)"><path d="M12 2l3 6.5 7 .9-5 4.8 1.3 7L12 18l-6.3 3.2L7 14.2 2 9.4l7-.9z"/></svg>';
 
-  $("#pdpCrumb").innerHTML = `<a href="index.html">Home</a><span>/</span><a href="shop.html">Shop</a><span>/</span><span>${p.name}</span>`;
+  $("#pdpCrumb").innerHTML = `<a href="store.html">Home</a><span>/</span><a href="shop.html">Shop</a><span>/</span><span>${p.name}</span>`;
 
   const views = ["FRONT", "BACK", "DETAIL", "ON BODY"];
   $("#pdp").innerHTML = `

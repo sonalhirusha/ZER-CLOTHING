@@ -13,11 +13,13 @@ document.addEventListener("DOMContentLoaded", function () {
     prints: { front: false, back: false, sleeve: false }
   };
 
-  // Build type cards
+  // Build type cards. Thumbnails auto-load from assets/images/studio/<id>-front.png
+  // when present (applyImages probes + falls back to the styled placeholder).
   $("#typeGrid").innerHTML = CUSTOM_TYPES.map((t, i) => `
     <div class="type-card ${i === 0 ? "sel" : ""}" data-type="${t.id}">
-      <div class="ph" data-label="${t.label}"></div><b>${t.name}</b><small>${money(t.base)}</small>
+      <div class="ph" data-label="${t.label}" data-img="assets/images/studio/${t.id}-front.png"></div><b>${t.name}</b><small>${money(t.base)}</small>
     </div>`).join("");
+  if (window.ZERO.applyImages) window.ZERO.applyImages($("#typeGrid"));
 
   $("#garmentColors").innerHTML = GARMENT_COLORS.map((c, i) =>
     `<button class="swatch ${i === 0 ? "sel" : ""}" data-garment="${c[0]}" style="background:${c[0]}" title="${c[1]}"></button>`).join("");
@@ -30,10 +32,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateShirt() {
     const sh = $("#mockShirt");
-    sh.style.background = D.garment;
+    sh.style.backgroundColor = D.garment;
     sh.style.borderRadius = "18px / 8px";
-    sh.setAttribute("data-label", D.type.label + " · " + D.zone.toUpperCase());
     sh.style.boxShadow = "inset 0 -40px 80px rgba(0,0,0,.4), inset 0 20px 60px rgba(255,255,255,.04)";
+    // Real garment mockup photo by convention: assets/images/studio/<type>-<zone>.png
+    // (e.g. tee-front.png). Loads on top of the colour box; falls back gracefully.
+    const src = `assets/images/studio/${D.type.id}-${D.zone}.png`;
+    const probe = new Image();
+    probe.onload = () => {
+      sh.style.backgroundImage = `url("${src}")`;
+      sh.style.backgroundSize = "contain";
+      sh.style.backgroundRepeat = "no-repeat";
+      sh.style.backgroundPosition = "center";
+      sh.setAttribute("data-label", "");
+    };
+    probe.onerror = () => {
+      sh.style.backgroundImage = "";
+      sh.setAttribute("data-label", D.type.label + " · " + D.zone.toUpperCase());
+    };
+    probe.src = src;
   }
 
 
@@ -137,9 +154,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function loadImg(file) {
     if (file.size > 10 * 1024 * 1024) { toast("File too large (max 10MB)"); return; }
+    D.file = file; // keep the original file for artwork upload
     const r = new FileReader();
     r.onload = () => { D.img = r.result; renderDesign(); updatePrice(); toast("Design uploaded"); };
     r.readAsDataURL(file);
+  }
+
+  // Build a compact, server-safe design spec (no giant base64 — artwork is uploaded separately).
+  function designSpec() {
+    return {
+      garmentType: D.type.id, type: D.type.name, garment: D.garment,
+      text: D.text, font: D.font, textColor: D.textColor, textSize: D.textSize,
+      zone: D.zone, placement: D.zone, prints: D.prints,
+      dimensions: { imgScale: D.imgScale, textPos: D.textPos, imgPos: D.imgPos }
+    };
   }
 
   // Add to bag
@@ -149,15 +177,39 @@ document.addEventListener("DOMContentLoaded", function () {
     addToCart({
       id: "custom-" + Date.now(), name: "Custom " + D.type.name, price: D.total,
       label: D.type.label, note: (D.text ? `"${D.text}"` : "Image print") + " · " + (zones.join("/") || "front"),
-      colorName: (GARMENT_COLORS.find(c => c[0] === D.garment) || [])[1]
+      colorName: (GARMENT_COLORS.find(c => c[0] === D.garment) || [])[1],
+      customDesignId: D.savedId || undefined, designSpec: designSpec()
     });
   });
 
-  // Save design
-  $("#saveDesign").addEventListener("click", () => {
+  // Save design (persists server-side + uploads artwork when a backend is connected)
+  $("#saveDesign").addEventListener("click", async () => {
+    const design = {
+      type: D.type.name, garmentType: D.type.id, garment: D.garment,
+      text: D.text, font: D.font, textColor: D.textColor, zone: D.zone,
+      total: D.total, when: Date.now()
+    };
     const saved = store.get("zero_designs", []);
-    saved.push({ type: D.type.name, garment: D.garment, text: D.text, font: D.font, total: D.total, when: Date.now() });
+    saved.unshift(design);
     store.set("zero_designs", saved);
-    toast("Design saved to your account");
+
+    if (window.ZERO.online()) {
+      try {
+        const res = await window.ZERO.api.post("/designs", {
+          garmentType: D.type.id, garmentColor: D.garment,
+          totalCents: Math.round(D.total * 100), spec: designSpec()
+        });
+        D.savedId = res.id;
+        if (D.file && res.id) {
+          const fd = new FormData();
+          fd.append("artwork", D.file);
+          fd.append("widthPx", ""); fd.append("heightPx", "");
+          await window.ZERO.api.upload(`/designs/${res.id}/artwork`, fd).catch(() => {});
+        }
+        toast("Design saved to your account");
+        return;
+      } catch (_) { /* fall through to local-only confirmation */ }
+    }
+    toast("Design saved");
   });
 });

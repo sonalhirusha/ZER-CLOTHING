@@ -1,0 +1,405 @@
+/* =====================================================================
+   ZERØ CLOTHING — PREMIUM REDESIGN LAYER  (additive, loads last)
+   ---------------------------------------------------------------------
+   New background "vibe": fixed WebGL liquid-chrome field behind the page
+   (CSS-gradient fallback), glassmorphic chrome, real 3D depth, a soft
+   cursor glow, film grain, and refined cinematic motion.
+   ===================================================================== */
+
+:root {
+  --zx-glass: rgba(10, 10, 13, 0.55);
+  --zx-glass-strong: rgba(8, 8, 11, 0.72);
+  --zx-hair: rgba(255, 255, 255, 0.08);
+  --zx-hair-bright: rgba(255, 255, 255, 0.16);
+  --zx-chrome: linear-gradient(135deg, #f6f6f8 0%, #c9c9cf 42%, #86868c 100%);
+  --zx-ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* =====================================================================
+   1)  ANIMATED BACKGROUND FIELD
+   ===================================================================== */
+#zx-webgl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+  background: #050507;            /* shown until first WebGL frame paints */
+}
+
+/* Keep all real content above the canvas */
+#loader,
+#site-header-mount,
+main,
+#site-footer-mount,
+#drawer-mount,
+.zx-cursor { position: relative; z-index: 1; }
+
+/* The page itself stays transparent so the field reads through the
+   naturally open sections; opaque sections still cover it on purpose. */
+body { background: #000; }
+
+/* Fallback animated gradient when WebGL is unavailable / reduced motion */
+body.zx-bg-fallback { background: #000; }
+body.zx-bg-fallback #zx-webgl {
+  background:
+    radial-gradient(80% 60% at 18% 12%, rgba(40, 40, 52, 0.55), transparent 60%),
+    radial-gradient(70% 60% at 88% 22%, rgba(28, 28, 38, 0.5), transparent 55%),
+    radial-gradient(90% 80% at 50% 110%, rgba(20, 20, 28, 0.6), transparent 60%),
+    #050507;
+  background-size: 200% 200%;
+  animation: zxDrift 26s ease-in-out infinite alternate;
+}
+@keyframes zxDrift {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%; }
+  100% { background-position: 30% 20%, 70% 30%, 40% 80%; }
+}
+
+/* Film grain — fixed, ultra-subtle, sits above content for texture */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: 3; pointer-events: none;
+  opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 200px 200px;
+}
+
+/* =====================================================================
+   2)  GLASSMORPHIC CHROME — header, drawer, footer
+   ===================================================================== */
+#siteHeader {
+  background: var(--zx-glass) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border-bottom: 1px solid var(--zx-hair);
+  transition: background .4s var(--zx-ease), border-color .4s var(--zx-ease);
+}
+#siteHeader .brand b,
+.site-footer .brand b { background: var(--zx-chrome); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+.drawer { background: var(--zx-glass-strong) !important; -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); border-left: 1px solid var(--zx-hair); }
+
+/* =====================================================================
+   3)  3D TILT + GLARE
+   ===================================================================== */
+.zx-tilt { transform-style: preserve-3d; will-change: transform; }
+.zx-glare {
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 4; opacity: 0;
+  transition: opacity .4s var(--zx-ease);
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+              rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%);
+  mix-blend-mode: screen;
+}
+.zx-tilting .zx-glare { opacity: 1; }
+
+/* =====================================================================
+   4)  CARDS & TILES — depth + glass + chrome edge
+   ===================================================================== */
+.cat-tile {
+  border: 1px solid var(--zx-hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 24px 60px rgba(0,0,0,.5);
+  transition: transform .6s var(--zx-ease), box-shadow .6s var(--zx-ease), border-color .6s var(--zx-ease);
+}
+.cat-tile.zx-tilting { border-color: var(--zx-hair-bright); box-shadow: 0 36px 90px rgba(0,0,0,.66), 0 0 0 1px rgba(255,255,255,.10); }
+
+.product-card {
+  border: 1px solid var(--zx-hair);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(22,22,27,.35), rgba(8,8,11,.55));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: transform .55s var(--zx-ease), box-shadow .55s var(--zx-ease), border-color .55s var(--zx-ease);
+}
+.product-card.zx-tilting { border-color: var(--zx-hair-bright); box-shadow: 0 34px 80px rgba(0,0,0,.62); }
+
+/* stat blocks + studio media glass */
+.stat { border: 1px solid var(--zx-hair); border-radius: var(--radius-lg); background: rgba(12,12,16,.4); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: clamp(20px,3vw,34px); transition: border-color .5s var(--zx-ease), transform .5s var(--zx-ease); }
+.stat:hover { border-color: var(--zx-hair-bright); transform: translateY(-4px); }
+.stat .n { background: var(--zx-chrome); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* =====================================================================
+   5)  BUTTONS — chrome edge + sheen
+   ===================================================================== */
+.btn--primary {
+  background: var(--zx-chrome);
+  color: #08080a;
+  border: 1px solid rgba(255,255,255,.25);
+}
+.btn--primary:hover { box-shadow: 0 16px 44px rgba(200,200,210,.18), 0 8px 22px rgba(0,0,0,.5); }
+.btn--ghost {
+  border: 1px solid var(--zx-hair-bright);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  background: rgba(255,255,255,.03);
+}
+.btn--ghost:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.3); }
+
+/* =====================================================================
+   6)  CURSOR GLOW
+   ===================================================================== */
+.zx-cursor {
+  position: fixed; top: 0; left: 0; width: 32px; height: 32px;
+  border-radius: 50%; pointer-events: none; z-index: 1500; opacity: 0;
+  background: radial-gradient(circle, rgba(222,224,232,.50), rgba(222,224,232,0) 68%);
+  mix-blend-mode: screen; will-change: transform;
+  transition: width .3s var(--zx-ease), height .3s var(--zx-ease), opacity .4s var(--zx-ease), background .3s var(--zx-ease);
+}
+.zx-cursor.on { opacity: 1; }
+.zx-cursor.is-hot { width: 66px; height: 66px; background: radial-gradient(circle, rgba(222,224,232,.40), rgba(222,224,232,0) 70%); }
+.zx-cursor.is-down { width: 20px; height: 20px; }
+@media (hover: none), (pointer: coarse) { .zx-cursor { display: none !important; } }
+
+/* =====================================================================
+   7)  SCROLL REVEAL POLISH
+   ===================================================================== */
+.zx-rev { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--zx-ease), transform .9s var(--zx-ease); }
+.zx-rev.zx-in { opacity: 1; transform: none; }
+
+/* =====================================================================
+   8)  EDITORIAL ACCENTS
+   ===================================================================== */
+.eyebrow { position: relative; }
+.section-head .eyebrow { padding-left: 30px; }
+.section-head .eyebrow::before {
+  content: ""; position: absolute; left: 0; top: 50%; width: 22px; height: 1px;
+  background: linear-gradient(90deg, var(--silver, #c8c8cc), transparent);
+}
+.divider, hr { background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent); }
+
+/* gallery + media chrome edge */
+.gallery-item, .editorial .ph, .collection-strip .ph { border: 1px solid var(--zx-hair); }
+
+/* link underline → chrome */
+.link-underline { background-image: linear-gradient(90deg, var(--silver, #c8c8cc), #fff); background-size: 0% 1px; background-repeat: no-repeat; background-position: 0 100%; transition: background-size .4s var(--zx-ease); }
+.link-underline:hover { background-size: 100% 1px; }
+
+/* =====================================================================
+   9)  MOTION SAFETY
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .zx-rev { opacity: 1 !important; transform: none !important; transition: none !important; }
+  body.zx-bg-fallback #zx-webgl { animation: none; }
+  .zx-tilt { transform: none !important; }
+  body::after { display: none; }
+}
+
+/* Phones: trim heavy blur for performance, keep the look */
+@media (max-width: 760px) {
+  .product-card, .stat { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  #siteHeader { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+}
+
+
+/* =====================================================================
+   PREMIUM DESIGN SYSTEM v2  —  components, commerce, mobile, a11y
+   Targets the project's real selectors (header/footer/card/cart/PDP/
+   quick-view/forms). Additive & reversible.
+   ===================================================================== */
+
+:root {
+  /* spacing scale */
+  --sp-1: 6px;  --sp-2: 10px; --sp-3: 16px; --sp-4: 24px;
+  --sp-5: 36px; --sp-6: 56px; --sp-7: 88px; --sp-8: 132px;
+  /* commerce accents */
+  --accent: #e9e9ee;
+  --good: #7ee0a8;
+}
+
+/* offset in-page anchors below the sticky header */
+:target { scroll-margin-top: calc(var(--header-h, 76px) + 20px); }
+
+/* ----------  NAV — active state + hover underline  ---------- */
+.nav-links a { position: relative; }
+.nav-links a::after {
+  content: ""; position: absolute; left: 0; right: 100%; bottom: -4px; height: 1px;
+  background: linear-gradient(90deg, #fff, var(--silver, #c8c8cc));
+  transition: right .4s var(--zx-ease);
+}
+.nav-links a:hover::after, .nav-links a.active::after { right: 0; }
+.icon-btn { transition: transform .3s var(--zx-ease), color .3s var(--zx-ease); }
+.icon-btn:hover { transform: translateY(-2px); }
+.badge { background: var(--zx-chrome) !important; color: #08080a !important; font-weight: 700; }
+
+/* ----------  PRODUCT BADGES / TAGS  ---------- */
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+  font-family: var(--font-body); font-size: .62rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; line-height: 1;
+  padding: 7px 10px; border-radius: 100px; color: #08080a;
+  background: var(--zx-chrome); box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.tag--ghost {
+  background: rgba(10,10,12,.55); color: #f1f1f4;
+  border: 1px solid var(--zx-hair-bright); box-shadow: none;
+}
+.pdp-badge .tag, .qv-cat { letter-spacing: .14em; }
+.save {
+  display: inline-block; margin-left: 10px; padding: 4px 10px; border-radius: 100px;
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #08080a; background: var(--good);
+}
+
+/* ----------  PRODUCT CARD — refined commerce polish  ---------- */
+.product-card .card-body { padding: 16px 16px 20px; }
+.product-card .card-cat { letter-spacing: .22em; }
+.product-card .card-title { transition: color .3s var(--zx-ease); }
+.product-card:hover .card-title { color: #fff; }
+.product-card .card-add .btn { letter-spacing: .12em; }
+.card-fav, .qv-btn { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); background: rgba(8,8,11,.5); border: 1px solid var(--zx-hair); transition: transform .3s var(--zx-ease), background .3s var(--zx-ease); }
+.card-fav:hover, .qv-btn:hover { transform: scale(1.08); background: rgba(20,20,24,.7); }
+.card-fav.active { background: #fff; color: #08080a; }
+
+/* ----------  LOADING SKELETON SHIMMER  ---------- */
+.zx-skeleton, .skeleton {
+  position: relative; overflow: hidden;
+  background: linear-gradient(100deg, #0e0e12 30%, #18181d 50%, #0e0e12 70%);
+  background-size: 200% 100%; animation: zxShimmer 1.4s ease-in-out infinite; border-radius: var(--radius);
+}
+@keyframes zxShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ----------  FORMS — premium inputs  ---------- */
+input[type="text"], input[type="email"], input[type="search"], input[type="tel"],
+input[type="password"], input[type="number"], select, textarea {
+  background: rgba(12,12,15,.6); border: 1px solid var(--zx-hair);
+  border-radius: 8px; padding: 14px 16px; color: #fff;
+  transition: border-color .3s var(--zx-ease), box-shadow .3s var(--zx-ease), background .3s var(--zx-ease);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: rgba(255,255,255,.35);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.06); background: rgba(16,16,20,.75);
+}
+input::placeholder, textarea::placeholder { color: var(--gray-500, #7d7d7d); }
+.newsletter { display: flex; gap: 8px; }
+.newsletter input { flex: 1; }
+.newsletter button { background: var(--zx-chrome); color: #08080a; font-weight: 700; border-radius: 8px; padding: 0 20px; letter-spacing: .1em; text-transform: uppercase; font-size: .72rem; transition: transform .3s var(--zx-ease); }
+.newsletter button:hover { transform: translateY(-2px); }
+
+/* ----------  PRODUCT PAGE — selectors, gallery, sticky CTA  ---------- */
+.pdp-thumb { border: 1px solid var(--zx-hair); border-radius: 10px; overflow: hidden; transition: border-color .3s var(--zx-ease), transform .3s var(--zx-ease); }
+.pdp-thumb.active { border-color: rgba(255,255,255,.5); }
+.pdp-thumb:hover { transform: translateY(-2px); }
+.pdp-main { border: 1px solid var(--zx-hair); border-radius: 14px; overflow: hidden; cursor: zoom-in; }
+.pdp-main.zoom { cursor: zoom-out; }
+
+.swatch {
+  width: 34px; height: 34px; border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--zx-hair) inset; outline: 2px solid transparent; outline-offset: 3px;
+  transition: outline-color .3s var(--zx-ease), transform .3s var(--zx-ease);
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.sel { outline-color: #fff; }
+
+.size-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.size-btn {
+  min-height: 48px; border: 1px solid var(--zx-hair); border-radius: 8px;
+  background: rgba(12,12,15,.5); font-weight: 600; letter-spacing: .04em;
+  transition: border-color .25s var(--zx-ease), background .25s var(--zx-ease), color .25s var(--zx-ease), transform .2s var(--zx-ease);
+}
+.size-btn:hover { border-color: rgba(255,255,255,.4); transform: translateY(-2px); }
+.size-btn.sel, .size-btn[aria-pressed="true"] { background: #fff; color: #08080a; border-color: #fff; }
+.size-btn.oos { opacity: .35; text-decoration: line-through; pointer-events: none; }
+
+/* accordion (fabric / shipping / returns) */
+.accordion { border-top: 1px solid var(--zx-hair); }
+.accordion > * { border-bottom: 1px solid var(--zx-hair); }
+
+/* Quick-view modal polish */
+.qv-modal { border: 1px solid var(--zx-hair); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); background: rgba(10,10,13,.85); }
+.qv-size { min-height: 46px; border: 1px solid var(--zx-hair); border-radius: 8px; transition: all .25s var(--zx-ease); }
+.qv-size.active { background: #fff; color: #08080a; border-color: #fff; }
+.qv-size.oos { opacity: .35; text-decoration: line-through; }
+.qv-swatch { width: 30px; height: 30px; border-radius: 50%; outline: 2px solid transparent; outline-offset: 3px; box-shadow: 0 0 0 1px var(--zx-hair) inset; }
+.qv-swatch.active { outline-color: #fff; }
+
+/* ----------  TRUST CHIPS (payment / guarantees in footer)  ---------- */
+.pay-icons { display: flex; gap: 8px; flex-wrap: wrap; }
+.pay-icons span {
+  font-size: .64rem; letter-spacing: .12em; padding: 6px 12px; border-radius: 100px;
+  border: 1px solid var(--zx-hair); color: var(--gray-300, #cfcfcf);
+  background: rgba(255,255,255,.02);
+}
+
+/* ----------  FOOTER  ---------- */
+.site-footer { border-top: 1px solid var(--zx-hair); background: linear-gradient(180deg, rgba(6,6,9,.6), rgba(0,0,0,.85)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.footer-cta h2 { letter-spacing: -0.03em; }
+
+/* ----------  CART DRAWER polish  ---------- */
+.cart-item { border-bottom: 1px solid var(--zx-hair); }
+.qty button { border: 1px solid var(--zx-hair); border-radius: 6px; width: 30px; height: 30px; transition: background .25s var(--zx-ease); }
+.qty button:hover { background: rgba(255,255,255,.08); }
+.ship-progress__bar { background: rgba(255,255,255,.08); border-radius: 100px; overflow: hidden; }
+.ship-progress__bar span { background: var(--zx-chrome); display: block; height: 100%; transition: width .5s var(--zx-ease); }
+.ship-progress.is-unlocked .ship-progress__bar span { background: var(--good); }
+
+/* =====================================================================
+   MOBILE-FIRST  —  touch targets, sticky PDP CTA, safe areas
+   ===================================================================== */
+@media (max-width: 760px) {
+  /* premium sticky add-to-cart on product pages */
+  .pdp-actions {
+    position: sticky; bottom: 0; z-index: 20;
+    margin-inline: calc(var(--gutter) * -1); padding: 14px var(--gutter);
+    background: var(--zx-glass-strong);
+    -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+    border-top: 1px solid var(--zx-hair);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .pdp-actions .btn { width: 100%; }
+  /* bigger tap targets */
+  .size-btn { min-height: 52px; }
+  .swatch { width: 38px; height: 38px; }
+  .icon-btn { min-width: 44px; min-height: 44px; }
+  /* full-width hero CTAs */
+  .hero__cta { width: 100%; }
+  .hero__cta .btn { flex: 1; }
+  /* tighten card body */
+  .product-card .card-body { padding: 14px 14px 18px; }
+}
+
+/* =====================================================================
+   ACCESSIBILITY & PERFORMANCE
+   ===================================================================== */
+/* keyboard focus is already handled by enhance.css; ensure swatches show it */
+.swatch:focus-visible, .size-btn:focus-visible, .qv-size:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* prevent layout shift / smoother images */
+img { content-visibility: auto; }
+/* honour data-saver / reduced motion already covered above */
+
+
+/* =====================================================================
+   CALM PREMIUM OVERRIDES  (remove flashy top animation & gimmicks)
+   The animated background, cursor glow, grain, magnetic & 3D tilt are
+   disabled in premium.js; these rules neutralise their styling and
+   restore clean, elegant hover states fit for a luxury clothing site.
+   ===================================================================== */
+
+/* kill the film-grain overlay */
+body::after { display: none !important; }
+
+/* no animated field — keep a clean, deep, static backdrop */
+#zx-webgl { display: none !important; }
+body, body.zx-bg-fallback { background: #050506 !important; }
+
+/* the 3D glare element never renders now, but ensure it's invisible */
+.zx-glare, .zx-cursor { display: none !important; }
+.zx-tilt { transform: none !important; }
+
+/* refined, restrained hover — a soft lift instead of tilt */
+.product-card { transition: transform .5s var(--zx-ease), box-shadow .5s var(--zx-ease), border-color .5s var(--zx-ease); }
+.product-card:hover { transform: translateY(-6px); border-color: var(--zx-hair-bright); box-shadow: 0 28px 64px rgba(0,0,0,.55); }
+.cat-tile { transition: transform .5s var(--zx-ease), border-color .5s var(--zx-ease), box-shadow .5s var(--zx-ease); }
+.cat-tile:hover { transform: translateY(-4px); border-color: var(--zx-hair-bright); }
+
+/* footer design credit */
+.footer-credit { font-size: .72rem; letter-spacing: .06em; color: var(--gray-500, #7d7d7d); }
+.footer-credit b { color: #d6d6da; font-weight: 600; letter-spacing: .14em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card, .cat-tile { transition: none; }
+  .product-card:hover, .cat-tile:hover { transform: none; }
+}

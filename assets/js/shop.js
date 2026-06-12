@@ -1,6 +1,9 @@
 /* ZERØ — Shop: filtering & sorting */
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const { $, $$, productCard, initReveal } = window.ZERO;
+
+  // Catalog from API when connected, else the bundled static catalog.
+  const PRODUCTS = await window.ZERO.loadProducts();
 
   const params = new URLSearchParams(location.search);
   const state = {
