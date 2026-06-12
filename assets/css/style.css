@@ -930,4 +930,87 @@ main:focus, [tabindex="-1"]:focus { outline: none; }
 /* ---- Reduced motion: stop the new looping animations too ---- */
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after, .btn.is-busy::before { animation: none !important; }
+   MOBILE OPTIMIZATION PASS — tighter spacing & type for phones
+   ==================================================================== */
+@media (max-width: 600px) {
+  :root { --gutter: 18px; --header-h: 58px; }
+
+  /* Vertical rhythm — less empty space, less scrolling */
+  .section { padding-block: 44px; }
+  .section--tight { padding-block: 30px; }
+  .section-head { margin-bottom: 26px; gap: 9px; }
+
+  /* Typography scaled for small screens */
+  .h-xl { font-size: 1.95rem; }
+  .h-lg { font-size: 1.65rem; }
+  .h-md { font-size: 1.25rem; }
+  .lead { font-size: 0.9rem; line-height: 1.55; }
+  .eyebrow { font-size: 0.62rem; letter-spacing: 0.2em; }
+
+  /* Header / announcement */
+  .announce { font-size: 0.6rem; padding: 7px 12px; letter-spacing: 0.12em; }
+  .brand { font-size: 1.2rem; }
+  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* Hero — slightly smaller, less tall */
+  .hero { min-height: 86svh; }
+  .hero h1 { font-size: 3.1rem; }
+  .hero__sub { font-size: 0.9rem; margin-top: 14px; }
+  .hero__cta { margin-top: 22px; }
+  .hero__eyebrow { margin-bottom: 16px; }
+
+  /* Interior page hero */
+  .page-hero { padding-top: 30px; padding-bottom: 26px; }
+  .breadcrumb { margin-bottom: 16px; font-size: 0.66rem; }
+
+  /* Category bar — compact chips */
+  .cat-scroller { gap: 7px; padding: 0 0 12px; }
+  .cat-scroller .chip { padding: 7px 12px; font-size: 0.68rem; }
+
+  /* Toolbar / sorting */
+  .shop-toolbar { margin-bottom: 18px; }
+  .shop-count { font-size: 0.72rem; }
+  .sort-select { padding: 9px 32px 9px 12px; font-size: 0.72rem; }
+
+  /* Product cards — tighter */
+  .pgrid { gap: 12px !important; }
+  .pgrid .card-title { font-size: 0.8rem; line-height: 1.25; }
+  .product-card .card-body { padding: 11px 1px; }
+
+  /* Big editorial / footer headings */
+  .editorial h1 { font-size: 3rem; }
+  .footer-cta h2 { font-size: 2.1rem; }
+  .footer-cta { padding-bottom: 36px; }
+  .footer-grid { padding-block: 36px; gap: 26px; }
+  .marquee .h-md { font-size: 1.1rem; }
+
+  /* Buttons */
+  .btn { padding: 13px 20px; font-size: 0.72rem; letter-spacing: 0.12em; }
+  .btn--lg { padding: 15px 24px; font-size: 0.74rem; }
+
+  /* Stats / features */
+  .stat .n { font-size: 2.3rem; }
+  .feature { padding: 22px 18px; }
+  .feature .ic { width: 44px; height: 44px; margin-bottom: 14px; }
+
+  /* Reviews */
+  .review-card { padding: 22px; }
+  .review-card p { font-size: 0.92rem; }
+
+  /* PDP */
+  .pdp-title { font-size: 1.5rem; }
+  .pdp-price { font-size: 1.25rem; }
+
+  /* Forms / checkout */
+  .checkout-card { padding: 20px; }
+  .field input, .field select, .field textarea { padding: 12px 14px; }
+}
+
+@media (max-width: 400px) {
+  .hero h1 { font-size: 2.7rem; }
+  .h-xl { font-size: 1.75rem; }
+  .editorial h1 { font-size: 2.5rem; }
+  .footer-cta h2 { font-size: 1.8rem; }
+  .pgrid .card-add .btn { font-size: 0.58rem; padding: 8px 6px; }
 }

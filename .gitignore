@@ -1,12 +1,4 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-*.log
-
-# Node (backend has its own .gitignore too)
+.testtmp/
 node_modules/
-
-# Local backend runtime artifacts
-backend/var/
-backend/prisma/*.db
-backend/prisma/*.db-journal
+*.log
+.DS_Store
