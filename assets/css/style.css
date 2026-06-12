@@ -756,98 +756,87 @@ img.real-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 
 /* ====================================================================
-   ACCESSIBILITY ENHANCEMENTS  ·  guided by UI/UX Pro Max UX guidelines
-   (visible focus, skip link, keyboard nav, contrast, reduced motion)
+   MOBILE OPTIMIZATION PASS — tighter spacing & type for phones
    ==================================================================== */
+@media (max-width: 600px) {
+  :root { --gutter: 18px; --header-h: 58px; }
 
-/* --- Visible keyboard focus (High: never remove focus without a replacement) --- */
-:focus-visible {
-  outline: 2px solid var(--white);
-  outline-offset: 3px;
+  /* Vertical rhythm — less empty space, less scrolling */
+  .section { padding-block: 44px; }
+  .section--tight { padding-block: 30px; }
+  .section-head { margin-bottom: 26px; gap: 9px; }
+
+  /* Typography scaled for small screens */
+  .h-xl { font-size: 1.95rem; }
+  .h-lg { font-size: 1.65rem; }
+  .h-md { font-size: 1.25rem; }
+  .lead { font-size: 0.9rem; line-height: 1.55; }
+  .eyebrow { font-size: 0.62rem; letter-spacing: 0.2em; }
+
+  /* Header / announcement */
+  .announce { font-size: 0.6rem; padding: 7px 12px; letter-spacing: 0.12em; }
+  .brand { font-size: 1.2rem; }
+  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* Hero — slightly smaller, less tall */
+  .hero { min-height: 86svh; }
+  .hero h1 { font-size: 3.1rem; }
+  .hero__sub { font-size: 0.9rem; margin-top: 14px; }
+  .hero__cta { margin-top: 22px; }
+  .hero__eyebrow { margin-bottom: 16px; }
+
+  /* Interior page hero */
+  .page-hero { padding-top: 30px; padding-bottom: 26px; }
+  .breadcrumb { margin-bottom: 16px; font-size: 0.66rem; }
+
+  /* Category bar — compact chips */
+  .cat-scroller { gap: 7px; padding: 0 0 12px; }
+  .cat-scroller .chip { padding: 7px 12px; font-size: 0.68rem; }
+
+  /* Toolbar / sorting */
+  .shop-toolbar { margin-bottom: 18px; }
+  .shop-count { font-size: 0.72rem; }
+  .sort-select { padding: 9px 32px 9px 12px; font-size: 0.72rem; }
+
+  /* Product cards — tighter */
+  .pgrid { gap: 12px !important; }
+  .pgrid .card-title { font-size: 0.8rem; line-height: 1.25; }
+  .product-card .card-body { padding: 11px 1px; }
+
+  /* Big editorial / footer headings */
+  .editorial h1 { font-size: 3rem; }
+  .footer-cta h2 { font-size: 2.1rem; }
+  .footer-cta { padding-bottom: 36px; }
+  .footer-grid { padding-block: 36px; gap: 26px; }
+  .marquee .h-md { font-size: 1.1rem; }
+
+  /* Buttons */
+  .btn { padding: 13px 20px; font-size: 0.72rem; letter-spacing: 0.12em; }
+  .btn--lg { padding: 15px 24px; font-size: 0.74rem; }
+
+  /* Stats / features */
+  .stat .n { font-size: 2.3rem; }
+  .feature { padding: 22px 18px; }
+  .feature .ic { width: 44px; height: 44px; margin-bottom: 14px; }
+
+  /* Reviews */
+  .review-card { padding: 22px; }
+  .review-card p { font-size: 0.92rem; }
+
+  /* PDP */
+  .pdp-title { font-size: 1.5rem; }
+  .pdp-price { font-size: 1.25rem; }
+
+  /* Forms / checkout */
+  .checkout-card { padding: 20px; }
+  .field input, .field select, .field textarea { padding: 12px 14px; }
 }
-:focus:not(:focus-visible) { outline: none; }
 
-/* Form fields keep their border treatment + gain a clear ring for keyboard users */
-.field input:focus-visible,
-.field select:focus-visible,
-.field textarea:focus-visible,
-.newsletter input:focus-visible,
-.coupon-row input:focus-visible {
-  outline: 2px solid var(--white);
-  outline-offset: 2px;
+@media (max-width: 400px) {
+  .hero h1 { font-size: 2.7rem; }
+  .h-xl { font-size: 1.75rem; }
+  .editorial h1 { font-size: 2.5rem; }
+  .footer-cta h2 { font-size: 1.8rem; }
+  .pgrid .card-add .btn { font-size: 0.58rem; padding: 8px 6px; }
 }
-
-/* Skip-link target shouldn't draw a full-page outline when focused programmatically */
-main:focus, [tabindex="-1"]:focus { outline: none; }
-
-/* --- Skip to content link (Medium: nav-heavy pages) --- */
-.skip-link {
-  position: fixed; top: 12px; left: 50%;
-  transform: translate(-50%, -220%);
-  z-index: calc(var(--z-loader) + 10);
-  background: var(--white); color: var(--black);
-  padding: 12px 24px; border-radius: 3px;
-  font-family: var(--font-body); font-size: 0.74rem; font-weight: 600;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  transition: transform var(--t-fast) var(--ease);
-}
-.skip-link:focus { transform: translate(-50%, 0); outline: 2px solid var(--black); outline-offset: 2px; }
-
-/* --- Lift low-contrast footer meta text toward WCAG AA --- */
-.footer-bottom { color: var(--gray-400); }
-
-/* --- Reduced motion: also stop looping / scroll-jacking effects --- */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-iteration-count: 1 !important; }
-  html { scroll-behavior: auto !important; }
-  .float, .marquee__track, .wa-float::after, .ph--shimmer::before,
-  .hero__scroll i::after, .tl-step.active .node::after { animation: none !important; }
-}
-
-
-/* ====================================================================
-   DESIGN / UX POLISH  ·  premium depth + hover micro-interactions
-   (on-brand monochrome — no palette change)
-   ==================================================================== */
-
-/* Product cards: lift with soft depth + brighter frame */
-.product-card { transition: transform var(--t-med) var(--ease); }
-.product-card:hover { transform: translateY(-6px); }
-.product-card .media { transition: transform var(--t-slow) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
-.product-card:hover .media { border-color: var(--line); box-shadow: 0 24px 52px -22px rgba(0,0,0,0.9); }
-.card-title { transition: color var(--t-fast); }
-.product-card:hover .card-title { color: var(--silver-2); }
-
-/* Buttons: tactile lift + soft glow */
-.btn--primary { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-med) var(--ease); }
-.btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -12px rgba(255,255,255,0.38); }
-.btn--ghost:hover { transform: translateY(-2px); }
-
-/* Feature cards: depth + animated silver top accent */
-.feature { transition: transform var(--t-med) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
-.feature::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gradient-silver); transform: scaleX(0); transform-origin: left; transition: transform var(--t-med) var(--ease); }
-.feature:hover { box-shadow: 0 22px 48px -24px rgba(0,0,0,0.9); }
-.feature:hover::before { transform: scaleX(1); }
-.feature:hover .ic { border-color: var(--silver); }
-
-/* Review cards: subtle lift */
-.review-card { transition: transform var(--t-med) var(--ease), border-color var(--t-med), box-shadow var(--t-med); }
-.review-card:hover { transform: translateY(-5px); border-color: var(--line); box-shadow: 0 22px 48px -24px rgba(0,0,0,0.9); }
-
-/* Category tiles: deeper frame on hover */
-.cat-tile { transition: border-color var(--t-med), box-shadow var(--t-med); }
-.cat-tile:hover { border-color: var(--line); box-shadow: 0 26px 56px -26px rgba(0,0,0,0.9); }
-
-/* Gallery: lift + frame */
-.gallery-item { transition: box-shadow var(--t-med), transform var(--t-med) var(--ease); }
-.gallery-item:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -22px rgba(0,0,0,0.9); }
-
-/* Chips + size buttons: nudge on hover */
-.chip, .size-btn { transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast), transform var(--t-fast); }
-.chip:hover, .size-btn:hover { transform: translateY(-1px); }
-
-/* Thicker, smoother nav underline */
-.nav-links a::after { height: 1.5px; }
-
-/* Inputs: soft focus glow for a more premium feel */
-.field input:focus, .field select:focus, .field textarea:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
