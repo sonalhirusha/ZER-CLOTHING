@@ -1,6 +1,7 @@
 /* ZERØ — Home page */
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   const { $, productCard, initReveal } = window.ZERO;
+  const PRODUCTS = await window.ZERO.loadProducts();
 
   const features = [
     { t: "Premium Fabric", d: "240–320 GSM heavyweight cotton. Built to outlast the trend cycle.", i: '<path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 7v10l8 4 8-4V7"/>' },

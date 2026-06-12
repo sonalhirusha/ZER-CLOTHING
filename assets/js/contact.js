@@ -23,5 +23,36 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  $("#contactForm").addEventListener("submit", (e) => { e.preventDefault(); e.target.reset(); toast("Message sent — we'll reply shortly"); });
+  $("#contactForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const get = (sel) => form.querySelector(sel);
+    const name = get('input[required]')?.value.trim() || "";
+    const email = get('input[type="email"]')?.value.trim() || "";
+    const subject = get("select")?.value || "Enquiry";
+    const message = get("textarea")?.value.trim() || "";
+
+    if (!name || !message) { toast("Please add your name and message"); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Enter a valid email address"); get('input[type="email"]')?.focus(); return; }
+
+    const btn = form.querySelector('button[type="submit"]');
+    btn?.classList.add("is-busy");
+
+    const done = () => { btn?.classList.remove("is-busy"); form.reset(); toast("Message sent — we'll reply shortly"); };
+
+    if (window.ZERO.online()) {
+      // Real backend: open a support ticket + trigger the team email.
+      window.ZERO.api.post("/contact", { name, email, subject, message }).then(done).catch(() => {
+        btn?.classList.remove("is-busy"); openWhatsApp(name, subject, message);
+      });
+    } else {
+      // Static fallback that still delivers the message: open a pre-filled WhatsApp chat.
+      setTimeout(() => { done(); openWhatsApp(name, subject, message); }, 400);
+    }
+  });
+
+  function openWhatsApp(name, subject, message) {
+    const text = `Hi ZERØ! [${subject}]\nName: ${name}\n\n${message}`;
+    window.open(`https://wa.me/${ZERO_WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  }
 });

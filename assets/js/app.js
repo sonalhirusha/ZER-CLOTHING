@@ -2,6 +2,15 @@
 (function () {
   "use strict";
 
+  /* ---------- Inject premium enhancement stylesheet (additive) ---------- */
+  try {
+    if (!document.querySelector("link[data-zx-enhance]")) {
+      const l = document.createElement("link");
+      l.rel = "stylesheet"; l.href = "assets/css/enhance.css"; l.setAttribute("data-zx-enhance", "1");
+      (document.head || document.documentElement).appendChild(l);
+    }
+  } catch (e) { /* non-fatal */ }
+
   /* ---------- Utilities ---------- */
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -11,6 +20,166 @@
     set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
   };
   window.ZERO = { $, $$, money, store };
+
+  /* ---------- API client (graceful static fallback) ----------
+     The API base is resolved in this order:
+       1. window.ZERO_API_BASE (set inline before app.js)
+       2. <meta name="zero-api-base" content="https://api.example.com/api/v1">
+       3. localhost dev → http://localhost:4000/api/v1
+       4. otherwise "" = pure static mode (works on GitHub Pages with demo data) */
+  function detectApiBase() {
+    if (typeof window.ZERO_API_BASE === "string") return window.ZERO_API_BASE;
+    const meta = document.querySelector('meta[name="zero-api-base"]');
+    if (meta && meta.content) return meta.content.trim();
+    const h = location.hostname;
+    if (h === "localhost" || h === "127.0.0.1" || h === "") return "http://localhost:4000/api/v1";
+    return "";
+  }
+  window.ZERO.API_BASE = detectApiBase();
+  const online = () => !!window.ZERO.API_BASE;
+  window.ZERO.online = online;
+
+  /* ---------- Session / token storage ---------- */
+  const TOKEN_KEY = "zero_access", REFRESH_KEY = "zero_refresh", USER_KEY = "zero_user";
+  const getToken = () => store.get(TOKEN_KEY, null);
+  const setSession = (d) => {
+    if (d && d.accessToken) store.set(TOKEN_KEY, d.accessToken);
+    if (d && d.refreshToken) store.set(REFRESH_KEY, d.refreshToken);
+    if (d && d.user) store.set(USER_KEY, d.user);
+  };
+  const clearSession = () => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY); };
+
+  async function apiRequest(path, { method = "GET", body, headers, timeout = 12000 } = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    const token = getToken();
+    try {
+      const res = await fetch(window.ZERO.API_BASE + path, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(headers || {})
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error((data.error && data.error.message) || "Request failed"), { status: res.status, data });
+      return data;
+    } finally { clearTimeout(timer); }
+  }
+
+  // Auto-refresh the access token once on a 401, then retry.
+  async function authed(path, opts = {}) {
+    try { return await apiRequest(path, opts); }
+    catch (e) {
+      if (e.status === 401 && store.get(REFRESH_KEY, null)) {
+        try { await window.ZERO.auth.refresh(); return await apiRequest(path, opts); }
+        catch { clearSession(); }
+      }
+      throw e;
+    }
+  }
+
+  // Multipart upload (receipts, artwork). Browser sets the multipart boundary.
+  async function upload(path, formData) {
+    const token = getToken();
+    const res = await fetch(window.ZERO.API_BASE + path, {
+      method: "POST",
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error((data.error && data.error.message) || "Upload failed"), { status: res.status, data });
+    return data;
+  }
+
+  window.ZERO.api = {
+    get: (p) => authed(p),
+    post: (p, body, headers) => authed(p, { method: "POST", body, headers }),
+    patch: (p, body) => authed(p, { method: "PATCH", body }),
+    del: (p) => authed(p, { method: "DELETE" }),
+    upload
+  };
+
+  window.ZERO.auth = {
+    isLoggedIn: () => !!getToken(),
+    user: () => store.get(USER_KEY, null),
+    getToken, setSession, clearSession,
+    async signup(payload) { const d = await apiRequest("/auth/signup", { method: "POST", body: payload }); setSession(d); return d; },
+    async login(payload) { const d = await apiRequest("/auth/login", { method: "POST", body: payload }); setSession(d); return d; },
+    async logout() {
+      const rt = store.get(REFRESH_KEY, null);
+      try { await apiRequest("/auth/logout", { method: "POST", body: { refreshToken: rt } }); } catch { }
+      clearSession();
+    },
+    async refresh() {
+      const rt = store.get(REFRESH_KEY, null);
+      if (!rt) throw new Error("no refresh token");
+      const d = await apiRequest("/auth/refresh", { method: "POST", body: { refreshToken: rt } });
+      setSession(d); return d;
+    },
+    me: () => apiRequest("/auth/me"),
+    forgot: (email) => apiRequest("/auth/forgot-password", { method: "POST", body: { email } }),
+    reset: (token, password) => apiRequest("/auth/reset-password", { method: "POST", body: { token, password } })
+  };
+
+  /* ---------- Small helpers ---------- */
+  const COLOR_NAMES = { "#0a0a0a": "Black", "#000000": "Black", "#f5f5f5": "Bone", "#ffffff": "White", "#7d7d7d": "Ash", "#3a3a3a": "Charcoal", "#1a2942": "Navy" };
+  const colorLabel = (hex) => COLOR_NAMES[hex] || "Black";
+  window.ZERO.colorLabel = colorLabel;
+  const escapeText = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  window.ZERO.escapeText = escapeText;
+  const FREE_SHIP = 15000;
+
+  /* ---------- Catalog registry (API with static fallback) ---------- */
+  const STATIC_PRODUCTS = (typeof PRODUCTS !== "undefined") ? PRODUCTS : [];
+  window.ZERO._products = STATIC_PRODUCTS.slice();
+  function mapApiProduct(r) {
+    return {
+      id: r.id || r.slug, name: r.name, cat: r.cat || r.category || "", collection: r.collection || "",
+      price: r.price, was: r.was || 0, rating: r.rating || 0, reviews: r.reviews || 0,
+      colors: r.colors || [], sizes: r.sizes || [], oos: r.oos || [], tags: r.tags || [],
+      badge: r.badge || "", popularity: r.popularity || 0, date: r.date || 0,
+      label: r.label || String(r.name || "").toUpperCase(),
+      img: r.img || `assets/images/${r.slug || r.id}-front.jpg`,
+      img2: r.img2 || `assets/images/${r.slug || r.id}-back.jpg`,
+      variants: r.variants || []
+    };
+  }
+  let _catalogPromise = null;
+  // Display real photos by convention: assets/images/<id>-front.jpg / -back.jpg.
+  // applyImages() probes each file and silently keeps the styled placeholder if
+  // the image isn't uploaded yet — so this is safe for every product.
+  function withImages(p) {
+    const id = p.id || p.slug;
+    if (id && !p.img) p.img = `assets/images/${id}-front.jpg`;
+    if (id && !p.img2) p.img2 = `assets/images/${id}-back.jpg`;
+    return p;
+  }
+  window.ZERO._products = window.ZERO._products.map(withImages);
+  window.ZERO.loadProducts = function () {
+    if (_catalogPromise) return _catalogPromise;
+    _catalogPromise = (async () => {
+      if (online()) {
+        try {
+          const rows = await window.ZERO.api.get("/products");
+          const list = Array.isArray(rows) ? rows : (rows.products || rows.data || []);
+          if (list.length) window.ZERO._products = list.map(mapApiProduct);
+        } catch (_) { /* keep static fallback */ }
+      }
+      return window.ZERO._products;
+    })();
+    return _catalogPromise;
+  };
+
+  /* ---------- Local order history (used until the API is connected) ---------- */
+  window.ZERO.getOrders = () => store.get("zero_orders", []);
+  window.ZERO.saveOrder = (o) => {
+    const all = store.get("zero_orders", []);
+    all.unshift(o); store.set("zero_orders", all); store.set("zero_last_order", o);
+  };
 
   let cart = store.get("zero_cart", []);
   let wishlist = store.get("zero_wishlist", []);
@@ -48,7 +217,7 @@
       ${Array(2).fill('<span>FREE ISLANDWIDE DELIVERY OVER RS 15,000&nbsp;&nbsp;·&nbsp;&nbsp;DESIGNED BY YOU&nbsp;&nbsp;·&nbsp;&nbsp;NEW ACID WASH DROP LIVE&nbsp;&nbsp;·&nbsp;&nbsp;CUSTOM PRINTS FROM RS 3,900&nbsp;&nbsp;·&nbsp;&nbsp;</span>').join("")}
     </div></div></div>
     <header class="site-header" id="siteHeader"><div class="container"><nav class="nav">
-      <a href="index.html" class="brand">ZER<b>Ø</b></a>
+      <a href="store.html" class="brand">ZER<b>Ø</b></a>
       <div class="nav-links">
         ${link("shop.html","Shop","shop")}
         ${link("acid-wash.html","Acid Wash","acid")}
@@ -90,7 +259,7 @@
         </div>
         <div class="footer-grid">
           <div class="footer-brand">
-            <a href="index.html" class="brand">ZER<b>Ø</b></a>
+            <a href="store.html" class="brand">ZER<b>Ø</b></a>
             <p>Premium custom streetwear made in Sri Lanka. Acid wash, oversized fits & couple collections — built for self expression.</p>
             <div class="newsletter">
               <input type="email" placeholder="Email for 10% off first order" aria-label="Email">
@@ -119,7 +288,7 @@
           </ul></div>
         </div>
         <div class="footer-bottom">
-          <span>© ${new Date().getFullYear()} ZERØ CLOTHING · Colombo, Sri Lanka</span>
+          <span>© ${new Date().getFullYear()} ZERØ CLOTHING · Colombo, Sri Lanka · <span class="footer-credit">Designed by <b>ZEROC7™</b></span></span>
           <div class="pay-icons"><span>VISA</span><span>MASTERCARD</span><span>EZ CASH</span><span>BANK</span><span>COD</span></div>
         </div>
       </div>
@@ -154,6 +323,7 @@
         </a>
         <div class="tags">${tags}</div>
         <button class="card-fav ${fav}" data-fav="${p.id}" aria-label="Wishlist">${ICON.heart}</button>
+        <button class="qv-btn" data-quickview="${p.id}" aria-label="Quick view"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <div class="card-add"><button class="btn btn--primary btn--block btn--sm" data-quickadd="${p.id}"><span>Quick Add — ${money(p.price)}</span></button></div>
       </div>
       <div class="card-body">
@@ -165,7 +335,7 @@
     </article>`;
   }
   window.ZERO.productCard = productCard;
-  window.ZERO.getProduct = (id) => PRODUCTS.find(p => p.id === id);
+  window.ZERO.getProduct = (id) => window.ZERO._products.find(p => p.id === id);
 
   /* ---------- Auto real-image loader ---------- */
   // Any element <div class="ph" data-img="path/to.jpg"> becomes a real photo.
@@ -219,7 +389,17 @@
         </div>
       </div>`).join("");
     const free = cartTotal() >= 15000;
-    foot.innerHTML = `
+    const sub = cartTotal();
+    const remaining = Math.max(0, FREE_SHIP - sub);
+    const pct = Math.min(100, Math.round((sub / FREE_SHIP) * 100));
+    const progress = `
+      <div class="ship-progress ${remaining === 0 ? "is-unlocked" : ""}">
+        <div class="ship-progress__label">${remaining > 0
+          ? `Add <b>${money(remaining)}</b> more for <b>FREE</b> shipping`
+          : `<b>Free islandwide shipping unlocked</b>`}</div>
+        <div class="ship-progress__bar"><span style="width:${pct}%"></span></div>
+      </div>`;
+    foot.innerHTML = progress + `
       <div class="cart-line"><span>Subtotal</span><b>${money(cartTotal())}</b></div>
       <div class="cart-line"><span>Shipping</span><b>${free ? "FREE" : "Calculated at checkout"}</b></div>
       <a href="checkout.html" class="btn btn--primary btn--block"><span>Checkout · ${money(cartTotal())}</span></a>
@@ -279,7 +459,152 @@
   }
   window.ZERO.setMobileNav = setMobileNav;
 
-  /* ---------- Scroll reveal ---------- */
+  /* ---------- Search overlay (real, debounced, with empty state) ---------- */
+  function ensureSearchUI() {
+    if ($("#searchOverlay")) return;
+    const el = document.createElement("div");
+    el.id = "searchOverlay";
+    el.className = "search-overlay";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Search products");
+    el.innerHTML = `
+      <div class="search-panel">
+        <div class="search-bar">
+          ${ICON.search}
+          <input id="searchInput" type="search" placeholder="Search hoodies, tees, acid wash…" autocomplete="off" aria-label="Search products">
+          <button class="icon-btn" data-search-close aria-label="Close search">${ICON.close}</button>
+        </div>
+        <div class="search-results" id="searchResults" aria-live="polite"></div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+  function openSearch() {
+    ensureSearchUI();
+    window.ZERO.loadProducts();
+    $("#searchOverlay").classList.add("open");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => $("#searchInput")?.focus(), 60);
+    renderSearch("");
+  }
+  function closeSearch() {
+    $("#searchOverlay")?.classList.remove("open");
+    document.body.classList.remove("no-scroll");
+  }
+  function searchCard(p) {
+    return `<a class="search-card" href="product.html?id=${p.id}">
+      <div class="ph ph-fashion" data-label="${p.label}" data-img="${p.img || ''}"></div>
+      <div class="search-card__meta"><b>${escapeText(p.name)}</b><small class="muted">${escapeText(p.cat)}</small>
+      <span class="search-price">${money(p.price)}</span></div></a>`;
+  }
+  function renderSearch(q) {
+    const box = $("#searchResults"); if (!box) return;
+    const list = window.ZERO._products || [];
+    const term = (q || "").trim().toLowerCase();
+    if (!term) {
+      const popular = [...list].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
+      box.innerHTML = `<p class="search-hint">Popular right now</p><div class="search-grid">${popular.map(searchCard).join("")}</div>`;
+      applyImages(box); return;
+    }
+    const hits = list.filter(p => (`${p.name} ${p.cat} ${p.collection} ${(p.tags || []).join(" ")}`).toLowerCase().includes(term));
+    if (!hits.length) {
+      const suggest = ["Acid Wash", "Oversized Tee", "Hoodie", "Couple Set"];
+      box.innerHTML = `<div class="search-empty"><b>No matches for “${escapeText(q)}”.</b>
+        <p class="muted">Try one of these instead:</p>
+        <div class="chip-row">${suggest.map(s => `<span class="chip" data-search-suggest="${s}">${s}</span>`).join("")}</div></div>`;
+      return;
+    }
+    box.innerHTML = `<p class="search-hint">${hits.length} result${hits.length !== 1 ? "s" : ""}</p><div class="search-grid">${hits.slice(0, 8).map(searchCard).join("")}</div>`;
+    applyImages(box);
+  }
+  window.ZERO.openSearch = openSearch;
+
+  /* ---------- Quick-view modal (conversion booster) ---------- */
+  let qvState = { product: null, size: null, color: null };
+  function ensureQuickViewUI() {
+    if ($("#qvOverlay")) return;
+    const el = document.createElement("div");
+    el.id = "qvOverlay";
+    el.className = "qv-overlay";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Quick view");
+    el.innerHTML = `<div class="qv-modal" role="document">
+      <button class="qv-close" data-qv-close aria-label="Close">${ICON.close}</button>
+      <div class="qv-media" data-qv-media></div>
+      <div class="qv-body" data-qv-body></div>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  function renderQuickView() {
+    const p = qvState.product; if (!p) return;
+    const media = $("[data-qv-media]"), body = $("[data-qv-body]");
+    media.innerHTML = `<div class="ph ph-fashion ph--shimmer" data-label="${escapeText(p.label)}" data-img="${p.img || ''}"></div>`;
+    const priceHTML = p.was ? `${money(p.price)} <span class="was">${money(p.was)}</span>` : money(p.price);
+    const sizes = (p.sizes || []).map(s => `<button class="qv-size ${(p.oos||[]).includes(s) ? 'oos' : ''} ${qvState.size === s ? 'active' : ''}" data-qv-size="${s}">${s}</button>`).join("");
+    const colors = (p.colors || []).map(c => `<span class="qv-swatch ${qvState.color === c ? 'active' : ''}" data-qv-color="${c}" style="background:${c}" title="${colorLabel(c)}"></span>`).join("");
+    body.innerHTML = `
+      <span class="qv-cat">${escapeText(p.cat || '')}</span>
+      <h3>${escapeText(p.name)}</h3>
+      <div class="qv-price">${priceHTML}</div>
+      <p class="muted" style="font-size:.9rem">${escapeText(p.description || 'Heavyweight premium streetwear, finished by hand in Colombo. Designed by you.')}</p>
+      ${sizes ? `<div><div class="eyebrow" style="margin-bottom:8px">Size</div><div class="qv-opts" data-qv-sizes>${sizes}</div></div>` : ''}
+      ${colors ? `<div><div class="eyebrow" style="margin-bottom:8px">Colour — <span data-qv-colorname>${colorLabel(qvState.color)}</span></div><div class="qv-opts">${colors}</div></div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn--primary btn--block" data-qv-add><span>Add to Bag — ${money(p.price)}</span></button>
+      </div>
+      <a class="qv-view-full link-underline" href="product.html?id=${p.id}">View full details</a>`;
+    applyImages(media);
+  }
+  function openQuickView(id) {
+    const p = window.ZERO.getProduct(id); if (!p) { location.href = `product.html?id=${id}`; return; }
+    qvState = { product: p, size: (p.sizes || []).find(s => !(p.oos || []).includes(s)) || null, color: (p.colors || [])[0] || null };
+    ensureQuickViewUI();
+    renderQuickView();
+    $("#qvOverlay").classList.add("open");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => $("[data-qv-close]")?.focus(), 60);
+  }
+  function closeQuickView() { $("#qvOverlay")?.classList.remove("open"); document.body.classList.remove("no-scroll"); }
+  window.ZERO.openQuickView = openQuickView;
+
+  /* ---------- Parallax + scroll progress (cinematic depth) ---------- */
+  function initScrollFx() {
+    if (!$(".zx-progress")) {
+      const bar = document.createElement("div"); bar.className = "zx-progress"; document.body.appendChild(bar);
+    }
+    const bar = $(".zx-progress");
+    const parallax = $$("[data-parallax], .hero__bg .ph");
+    const onScroll = () => {
+      const st = window.scrollY || document.documentElement.scrollTop;
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      if (bar) bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+      parallax.forEach(el => { el.style.transform = `translate3d(0, ${st * 0.18}px, 0) scale(1.12)`; });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  /* ---------- Skeleton loaders (perceived performance) ---------- */
+  function injectSkeletons() {
+    const skelCard = `<div class="zx-skel-card"><div class="zx-skel zx-skel-img"></div><div class="zx-skel zx-skel-line"></div><div class="zx-skel zx-skel-line sm"></div></div>`;
+    ["#featuredGrid", "#shopGrid", "#relatedGrid", "#fbtGrid"].forEach(sel => {
+      const grid = $(sel);
+      if (grid && !grid.children.length) grid.innerHTML = Array(sel === "#shopGrid" ? 6 : 4).fill(skelCard).join("");
+    });
+  }
+
+  /* ---------- Back to top ---------- */
+  function initToTop() {
+    if ($(".to-top")) return;
+    const btn = document.createElement("button");
+    btn.className = "to-top";
+    btn.setAttribute("aria-label", "Back to top");
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    document.body.appendChild(btn);
+    const onScroll = () => btn.classList.toggle("show", window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
   function initReveal() {
     const io = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in");
@@ -315,7 +640,9 @@
     // Close overlays with the Escape key (keyboard navigation)
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      if ($("#cartDrawer")?.classList.contains("open")) closeCart();
+      if ($("#searchOverlay")?.classList.contains("open")) closeSearch();
+      else if ($("#qvOverlay")?.classList.contains("open")) closeQuickView();
+      else if ($("#cartDrawer")?.classList.contains("open")) closeCart();
       else if ($("#mobileNav")?.classList.contains("open")) setMobileNav(false);
     });
   }
@@ -335,7 +662,7 @@
       if (qa) {
         e.preventDefault();
         const p = window.ZERO.getProduct(qa.getAttribute("data-quickadd"));
-        if (p) addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: p.sizes.find(s => !(p.oos||[]).includes(s)) });
+        if (p) addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: p.sizes.find(s => !(p.oos||[]).includes(s)), colorName: colorLabel((p.colors||[])[0]) });
       }
       const rm = t.closest("[data-remove]");
       if (rm) { cart = cart.filter(c => c.key !== rm.getAttribute("data-remove")); saveCart(); }
@@ -344,8 +671,51 @@
         const item = cart.find(c => c.key === qtyBtn.getAttribute("data-key"));
         if (item) { item.qty += parseInt(qtyBtn.getAttribute("data-qty")); if (item.qty < 1) cart = cart.filter(c => c !== item); saveCart(); }
       }
-      if (t.closest("[data-news]")) { e.preventDefault(); toast("Welcome to ZERØ — check your inbox"); }
-      if (t.closest("[data-search]")) { toast("Search coming soon"); }
+      const news = t.closest("[data-news]");
+      if (news) {
+        e.preventDefault();
+        const input = news.closest(".newsletter")?.querySelector("input");
+        const email = (input?.value || "").trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Enter a valid email"); input?.focus(); return; }
+        news.disabled = true;
+        const done = () => { toast("Welcome to ZERØ — your 10% code is on its way"); if (input) input.value = ""; news.disabled = false; };
+        if (online()) window.ZERO.api.post("/newsletter", { email }).then(done).catch(done);
+        else done();
+      }
+      if (t.closest("[data-search]")) { openSearch(); }
+      if (t.closest("[data-search-close]") || t.closest("#searchOverlay") === t) { closeSearch(); }
+      const suggest = t.closest("[data-search-suggest]");
+      if (suggest) {
+        const term = suggest.getAttribute("data-search-suggest");
+        const input = $("#searchInput");
+        if (input) { input.value = term; renderSearch(term); input.focus(); }
+      }
+
+      // Quick-view interactions
+      const qv = t.closest("[data-quickview]");
+      if (qv) { e.preventDefault(); openQuickView(qv.getAttribute("data-quickview")); }
+      if (t.closest("[data-qv-close]") || (t.id === "qvOverlay")) { closeQuickView(); }
+      const qvSize = t.closest("[data-qv-size]");
+      if (qvSize) { qvState.size = qvSize.getAttribute("data-qv-size"); $$("[data-qv-size]").forEach(b => b.classList.toggle("active", b === qvSize)); }
+      const qvColor = t.closest("[data-qv-color]");
+      if (qvColor) {
+        qvState.color = qvColor.getAttribute("data-qv-color");
+        $$("[data-qv-color]").forEach(b => b.classList.toggle("active", b === qvColor));
+        const cn = $("[data-qv-colorname]"); if (cn) cn.textContent = colorLabel(qvState.color);
+      }
+      if (t.closest("[data-qv-add]")) {
+        const p = qvState.product;
+        if (p) { addToCart({ id: p.id, name: p.name, price: p.price, label: p.label, size: qvState.size, colorName: colorLabel(qvState.color) }); closeQuickView(); }
+      }
+    });
+
+    // Debounced live search
+    let searchTimer = null;
+    document.addEventListener("input", (e) => {
+      if (e.target.id !== "searchInput") return;
+      clearTimeout(searchTimer);
+      const val = e.target.value;
+      searchTimer = setTimeout(() => renderSearch(val), 180);
     });
     const header = $("#siteHeader");
     if (header) {
@@ -366,6 +736,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     initLoader();
     if (window.ZERO_PAGE !== undefined) window.ZERO.mount(window.ZERO_PAGE);
-    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y();
+    injectSkeletons();
+    bindEvents(); renderCart(); updateBadges(); initReveal(); applyImages(document); initA11y(); initToTop();
+    initScrollFx();
   });
 })();
